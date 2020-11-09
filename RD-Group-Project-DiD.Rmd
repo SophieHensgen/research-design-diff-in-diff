@@ -39,13 +39,13 @@ arrange(df, V1)
 df <- as_tibble(df)
 
 ## Rename Columns for a better workflow
-# x stands for independent varaible/covariates
+# x stands for independent variable/covariates
 # y stands for dependent variable
-# d stands for tratement variable
+# d stands for treatement variable
 df <- df %>% 
   rename(
     x_id = V1,
-    x_store.name = V2,
+    x_store.name = V2, #chain 1=bk; 2=kfc; 3=roys; 4=wendys
     x_co.owned = V3,
     d_state = V4, #
     x_south.j = V5,
@@ -92,15 +92,21 @@ df <- df %>%
     x_reg.11.sec = V46
     )
 
+# Creating a new variable which says 1 if the restaurant was interviewed in the first wave
+df$x_interviewed.w1 <- (df$x_interviewed.w1 = 1)
 
-# add individual variables instead of one for the stores as well as the sates
+# creating new variables for each store (x_store.name) and state (d_state) into dummies. 
+#x_bk <- 
+#x_kfc <- 
+
+# add individual variables instead of one for the stores as well as the states
 ```
 
 ```{r changing class , echo=FALSE}
 
 # Some variables are a character vector, which cannot be used in a summary. Therefore they have to be changed. 
 
-arrange(df, V1)
+
 
 ```
 
@@ -114,20 +120,91 @@ df.select <- df %>%
 #summary of the subset
 stargazer(data.frame(df.select), type = "text", summary = TRUE)
 
-
-
-df$x_st.wage.after
-df$x_st.wage.before
-
-as.
 ```
 
 
+```{r Table 1 - Sample Size and response rate, echo=FALSE}
+
+# first wave
+# d_state
+
+# count number interviewed
+count.all.w1 <- df %>% 
+  count(d_state)
+
+count.all.w1
+
+# response rate nj
+count.all.per <- df %>%
+  tally(x_interviewed.w1)%>%
+  mutate(percent = n/473)
+
+# response rate nj
+count.nj.per <- df %>%
+  count(d_state) %>%
+  filter(d_state == 1) %>%
+  mutate(percent = n/364)
+
+# response rate pa
+count.pa.per <- df %>%
+  count(d_state) %>%
+  filter(d_state == 0) %>%
+  mutate(percent = n/109)
+
+# second wave
+# x_status.sec.interview, d_state
+
+count.all.w2 <- df %>% 
+  count(x_status.sec.interview)
+
+count.nj <- df %>% 
+  filter(d_state == 1) %>% # NJ
+  count(x_status.sec.interview)
+
+count.pa <- df %>% 
+  filter(d_state == 0) %>% # PA
+  count(x_status.sec.interview)
+
+count.all.w2
+count.nj
+count.pa
+
+```
+
+```{r Table 2 - Means of Key Variables, echo=FALSE}
 
 
 
 
+```
 
+```{r Figure 1 - Distribution of starting wage rates, echo=FALSE}
+
+
+
+
+```
+
+```{r Table 3 - Average eMployment per store before and after the raise, echo=FALSE}
+
+
+
+
+```
+
+```{r Table 4 - Reduced Form Models for change in employment, echo=FALSE}
+
+
+
+
+```
+
+```{r Table 5 - Specification tests of reduced form employment models, echo=FALSE}
+
+
+
+
+```
 
 
 
