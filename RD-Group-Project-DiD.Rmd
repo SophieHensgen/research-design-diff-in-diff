@@ -51,8 +51,8 @@ df <- df %>%
     x_south.j = V5,
     x_central.j = V6,
     x_north.j = V7,
-    x_northeast.philly = V8,
-    x_easton.philly = V9,
+    x_northeast.pa = V8,
+    x_easton.pa = V9,
     x_shore.j = V10, #
     x_callbacks.first = V11,
     y_full.emp = V12,
@@ -70,8 +70,8 @@ df <- df %>%
     x_small.fries = V24,
     x_entree = V25,
     x_cash.reg = V26,
-    x_reg.11 = V27, #
-    x_type.sec.interview = V28,
+    x_reg.11 = V27, 
+    x_type.sec.interview = V28, # second wave
     x_status.sec.interview = V29,
     x_date.sec = V30,
     x_callbacks.sec = V31,
@@ -92,22 +92,72 @@ df <- df %>%
     x_reg.11.sec = V46
     )
 
+```
+
+```{r Creating Variables, echo=FALSE}
+
 # Creating a new variable which says 1 if the restaurant was interviewed in the first wave
 df$x_interviewed.w1 <- (df$x_interviewed.w1 = 1)
 
 # creating new variables for each store (x_store.name) and state (d_state) into dummies. 
-#x_bk <- 
-#x_kfc <- 
 
-# add individual variables instead of one for the stores as well as the states
+# x_bk dummy variable for burger king (1) or not (0)
+df$x_bk <- gsub(2, 0, df$x_store.name) 
+df$x_bk <- gsub(3, 0, df$x_bk) 
+df$x_bk <- gsub(4, 0, df$x_bk) 
+
+# x_kfc dummy variable for KFC (1) or not (0)
+df$x_kfc <- gsub(1, 0, df$x_store.name) 
+df$x_kfc <- gsub(3, 0, df$x_kfc) 
+df$x_kfc <- gsub(4, 0, df$x_kfc) 
+df$x_kfc <- gsub(2, 1, df$x_kfc) 
+
+# x_roys dummy variable for Roys (1) or not (0)
+df$x_roys <- gsub(1, 0, df$x_store.name) 
+df$x_roys <- gsub(2, 0, df$x_roys) 
+df$x_roys <- gsub(4, 0, df$x_roys) 
+df$x_roys <- gsub(3, 1, df$x_roys) 
+
+# x_wendys dummy variable for Wendys (1) or not (0)
+df$x_wendys <- gsub(1, 0, df$x_store.name) 
+df$x_wendys <- gsub(3, 0, df$x_wendys) 
+df$x_wendys <- gsub(2, 0, df$x_wendys) 
+df$x_wendys <- gsub(4, 1, df$x_wendys)
+
+# d_nj dummy variable for restaurants in NJ (1) or not (0)
+df$d_nj <- df$d_state
+
+# d_nj dummy variable for restaurants in PA (1) or not (0)
+df$d_pa <- gsub(1, 2, df$d_state)
+df$d_pa <- gsub(0, 1, df$d_pa)
+df$d_pa <- gsub(2, 0, df$d_pa)
+
+
 ```
 
 ```{r changing class , echo=FALSE}
 
 # Some variables are a character vector, which cannot be used in a summary. Therefore they have to be changed. 
 
+df[,12:17] <- lapply(df[,12:17], as.factor) #first convert into factor, and then into numeric. if tried to convert idrectly from character into numeric a error will appear.
+df[,12:17] <- lapply(df[,12:17], as.numeric)
 
+df[,19] <- lapply(df[,19], as.factor)
+df[,19] <- lapply(df[,19], as.numeric)
 
+df[,23:27] <- lapply(df[,23:27], as.factor)
+df[,23:27] <- lapply(df[,23:27], as.numeric)
+
+df[,31:46] <- lapply(df[,31:46], as.factor)
+df[,31:46] <- lapply(df[,31:46], as.numeric)
+
+df[,48:51] <- lapply(df[,48:51], as.factor)
+df[,48:51] <- lapply(df[,48:51], as.numeric)
+
+df[,53] <- lapply(df[,53], as.factor)
+df[,53] <- lapply(df[,53], as.numeric)
+
+str(df)
 ```
 
 ```{r, echo=FALSE}
@@ -115,7 +165,7 @@ df$x_interviewed.w1 <- (df$x_interviewed.w1 = 1)
 
 #subsetting the data frame
 df.select <- df %>%
-  select(x_co.owned, x_south.j, x_central.j, x_north.j, x_northeast.philly, x_easton.philly, x_st.wage.before, x_st.wage.after, x_open.per.day, x_open.per.day.sec, y_full.emp, y_full.emp.sec, d_state, x_store.name)
+  select(x_co.owned, x_south.j, x_central.j, x_north.j, x_northeast.pa, x_easton.pa, x_st.wage.before, x_st.wage.after, x_open.per.day, x_open.per.day.sec, y_full.emp, y_full.emp.sec, d_state, x_store.name)
 
 #summary of the subset
 stargazer(data.frame(df.select), type = "text", summary = TRUE)
