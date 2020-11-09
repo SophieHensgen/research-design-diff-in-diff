@@ -173,35 +173,35 @@ count.pa
 
 ```{r Table 2 - Means of Key Variables, echo=FALSE}
 
-
+# Khizer 
 
 
 ```
 
 ```{r Figure 1 - Distribution of starting wage rates, echo=FALSE}
 
-
+# Sophie 
 
 
 ```
 
 ```{r Table 3 - Average eMployment per store before and after the raise, echo=FALSE}
 
-
+# Sophie
 
 
 ```
 
 ```{r Table 4 - Reduced Form Models for change in employment, echo=FALSE}
 
-
+# Sophie 
 
 
 ```
 
 ```{r Table 5 - Specification tests of reduced form employment models, echo=FALSE}
 
-
+# Khizer
 
 
 ```
