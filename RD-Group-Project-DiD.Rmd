@@ -11,6 +11,7 @@ library(dplyr)
 library(readr)
 library(tidyverse)
 library(stargazer)
+library(plotly)
 ```
 
 ## Load Data Set
@@ -232,7 +233,69 @@ count.pa
 
 # Sophie 
 
+### Replication of Figure 1
 
+## creating specific objects for starter wage before respectively for nj and pa
+
+x_st.wage.before.nj <- df$x_st.wage.before[df$d_nj == 1]
+x_st.wage.before.pa <- df$x_st.wage.before[df$d_pa == 1]
+
+# Plot for before treatment
+
+# Set histogram bins
+xbins <- list(start=4.20, end=5.60)
+
+# 
+p.before <- plot_ly(alpha = 0.5) %>%
+  add_histogram(x = x_st.wage.before.nj, 
+                  #xbins = c(4.20, 5.60, 0.5),
+                  histnorm = "percent", 
+                  name = "Wage Before (New Jersey)") %>%
+  add_histogram(x = x_st.wage.before.pa, 
+                  #xbins = c(4.20, 5.60, 0.5),
+                  histnorm = "percent",
+                  name = "Wage Before (Pennsylvania)") %>%
+  layout(barmode = "group", title = "February 1992",
+           xaxis = list(tickvals=seq(4.25, 5.55, 0.1),
+                        title = "Wage in $ per hour"),
+           yaxis = list(range = c(0, 50)),
+                      margin = list(b = 100, 
+                          l = 80, 
+                          r = 80, 
+                          t = 80, 
+                          pad = 0, 
+                          autoexpand = TRUE))
+
+p.before
+
+## creating specific objects for starter wage before respectively for nj and pa
+
+x_st.wage.after.nj <- df$x_st.wage.after[df$d_nj == 1]
+x_st.wage.after.pa <- df$x_st.wage.after[df$d_pa == 1]
+
+# Plot for wage after treatment
+
+p.after <- plot_ly(alpha = 0.5) %>%
+  add_histogram(x = x_st.wage.after.nj, 
+                  xbins = c(4.25, 5.60, 0.5),
+                  histnorm = "percent", 
+                  name = "Wage After (New Jersey)") %>%
+  add_histogram(x = x_st.wage.after.pa, 
+                  xbins = c(4.25, 5.60, 0.5),
+                  histnorm = "percent",
+                  name = "Wage After (Pennsylvania)") %>%
+  layout(barmode = "group", title = "February 1992",
+           xaxis = list(tickvals=seq(4.25, 5.55, 0.1),
+                        title = "Wage in $ per hour"),
+           yaxis = list(range = c(0, 50)),
+                      margin = list(b = 100, 
+                          l = 80, 
+                          r = 80, 
+                          t = 80, 
+                          pad = 0, 
+                          autoexpand = TRUE))
+
+p.after
 ```
 
 ```{r Table 3 - Average eMployment per store before and after the raise, echo=FALSE}
