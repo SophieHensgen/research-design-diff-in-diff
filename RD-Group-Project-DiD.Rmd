@@ -42,7 +42,7 @@ df <- as_tibble(df)
 # x stands for independent varaible/covariates
 # y stands for dependent variable
 # d stands for tratement variable
-df %>% 
+df <- df %>% 
   rename(
     x_id = V1,
     x_store.name = V2,
@@ -75,9 +75,9 @@ df %>%
     x_status.sec.interview = V29,
     x_date.sec = V30,
     x_callbacks.sec = V31,
-    x_full.emp.sec = V32,
-    x_part.emp.sec = V33,
-    x_managers.sec = V34,
+    y_full.emp.sec = V32,
+    y_part.emp.sec = V33,
+    y_managers.sec = V34,
     x_st.wage.after = V35,
     x_months.raise.sec = V36,
     x_amount.raise.sec = V37,
@@ -93,13 +93,33 @@ df %>%
     )
 
 
+# add individual variables instead of one for the stores as well as the sates
+```
+
+```{r changing class , echo=FALSE}
+
+# Some variables are a character vector, which cannot be used in a summary. Therefore they have to be changed. 
+
+arrange(df, V1)
 
 ```
 
-
 ```{r, echo=FALSE}
+#Summary Statistic of a subset of the data frame df
+
+#subsetting the data frame
+df.select <- df %>%
+  select(x_co.owned, x_south.j, x_central.j, x_north.j, x_northeast.philly, x_easton.philly, x_st.wage.before, x_st.wage.after, x_open.per.day, x_open.per.day.sec, y_full.emp, y_full.emp.sec, d_state, x_store.name)
+
+#summary of the subset
+stargazer(data.frame(df.select), type = "text", summary = TRUE)
 
 
+
+df$x_st.wage.after
+df$x_st.wage.before
+
+as.
 ```
 
 
