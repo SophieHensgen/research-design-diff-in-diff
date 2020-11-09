@@ -9,22 +9,114 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 library(dplyr)
 library(readr)
+library(tidyverse)
+library(stargazer)
 ```
 
-## Paper
+## Load Data Set
 
 
-```{r}
-read.table("public.dat")
-
+```{r load data set}
+df <- read.table("public.dat")
+df
 
 ```
 
 ## Code
 
 
-```{r, echo=FALSE}
+```{r arrange data, echo=FALSE}
+
+# arrange data to better observe
+
+arrange(df, V1)
 
 ```
+
+```{r Rename Varibales, echo=FALSE}
+
+## changing into tibble
+df <- as_tibble(df)
+
+## Rename Columns for a better workflow
+# x stands for independent varaible/covariates
+# y stands for dependent variable
+# d stands for tratement variable
+df %>% 
+  rename(
+    x_id = V1,
+    x_store.name = V2,
+    x_co.owned = V3,
+    d_state = V4, #
+    x_south.j = V5,
+    x_central.j = V6,
+    x_north.j = V7,
+    x_northeast.philly = V8,
+    x_easton.philly = V9,
+    x_shore.j = V10, #
+    x_callbacks.first = V11,
+    y_full.emp = V12,
+    y_part.emp = V13,
+    y_managers = V14,
+    x_st.wage.before = V15,
+    x_months.raise = V16, 
+    x_amount.raise = V17,
+    x_cash.bounty = V18,
+    y_employees.affected.n.minimum = V19,
+    x_reduced = V20,
+    x_open.hour = V21,
+    x_open.per.day = V22,
+    x_medium.soda = V23,
+    x_small.fries = V24,
+    x_entree = V25,
+    x_cash.reg = V26,
+    x_reg.11 = V27, #
+    x_type.sec.interview = V28,
+    x_status.sec.interview = V29,
+    x_date.sec = V30,
+    x_callbacks.sec = V31,
+    x_full.emp.sec = V32,
+    x_part.emp.sec = V33,
+    x_managers.sec = V34,
+    x_st.wage.after = V35,
+    x_months.raise.sec = V36,
+    x_amount.raise.sec = V37,
+    x_special.program.sec = V38,
+    x_reduced.price = V39,
+    x_open.hour.sec = V40,
+    x_open.per.day.sec = V41,
+    x_medium.soda.sec = V42,
+    x_small.fries.sec = V43,
+    x_entree.sec = V44,
+    x_cash.reg.sec = V45,
+    x_reg.11.sec = V46
+    )
+
+
+
+```
+
+
+```{r, echo=FALSE}
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
