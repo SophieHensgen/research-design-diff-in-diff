@@ -313,7 +313,7 @@ p.after <- plot_ly(alpha = 0.5) %>%
 p.after
 ```
 
-```{r Table 3 - Average eMployment per store before and after the raise, echo=FALSE}
+```{r Table 3 - Average Employment per store before and after the raise, echo=FALSE}
 
 # Sophie
 
@@ -372,6 +372,61 @@ results.second <- df %>%
 # Filter complete cases across all columns
   df.balanced <- df %>% filter(complete.cases(.)) 
     
+
+# Means time point 1
+  
+results.balanced.first <- df.balanced %>% 
+            group_by(d_nj) %>% # group_by the treatment variable
+            dplyr::select(d_nj, y_full.emp) %>% # only keep variable of interest
+            group_by(N = n(), .add = TRUE) %>% # count number of rows
+            summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
+            mutate(n = N - na_sum) %>% 
+            mutate(se = sqrt(var/n))
+
+# Add row with differences
+  results.balanced.first <- bind_rows(results.balanced.first, results.balanced.first[2,]-results.balanced.first[1,])
+  kable(results.balanced.first, digits=2)
+
+# Means time point 2
+results.balanced.second <- df.balanced %>% 
+            group_by(d_nj) %>% # group_by the treatment variable
+            dplyr::select(d_nj, y_full.emp.sec) %>% # only keep variable of interest 
+            group_by(N = n(), .add = TRUE) %>% # count number of rows
+            summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
+            mutate(n = N - na_sum) %>% 
+            mutate(se = sqrt(var/n))
+
+   
+# Add row with differences
+  results.balanced.second <- bind_rows(results.balanced.second, results.balanced.second[2,]-results.balanced.second[1,])
+  results.balanced.second$group<- c("Control (Pennsylvania)", "Treatment (New Jersey)", "Difference")
+  kable(results.balanced.second, digits=2)
+  
+# Mean Differences 
+  
+results.balanced.compare <- bind_rows(results.balanced.first, results.balanced.second)
+  results.balanced.compare <- select(results.balanced.compare, -8)
+  results.balanced.compare <- bind_rows(results.balanced.compare, results.balanced.compare[4,]-results.balanced.compare[1,])
+  results.balanced.compare <- bind_rows(results.balanced.compare, results.balanced.compare[5,]-results.balanced.compare[2,])
+  results.balanced.compare <- bind_rows(results.balanced.compare, results.balanced.compare[6,]-results.balanced.compare[3,])
+  results.balanced.compare$group<- c("Control (Pennsylvania)", "Treatment (New Jersey)", "Difference", "Control (Pennsylvania)", "Treatment (New Jersey)", "Difference", "Control (Pennsylvania)", "Treatment (New Jersey)", "Difference")
+  kable(results.balanced.compare, digits=2)  
+  
+  
+## 5th row: Change in MEANs and SEs between both time points, permanently closed set to 0
+  
+# Create a new variable where permantely closed stores have a FTE of 0
+    
+df$y_full.emp.sec.closed <- df$y_full.emp.sec
+df$y_full.emp.sec.closed[df$x_status.sec.interview == 3] <- 0
+  
+
+# Filter observations in both waves
+  df.balanced <- df %>% na.omit
+    
+# Filter complete cases across all columns
+  df.balanced <- df %>% filter(complete.cases(.)) 
+    
 results.balanced.first <- df.balanced %>% 
             group_by(d_nj) %>% # group_by the treatment variable
             dplyr::select(d_nj, y_full.emp) %>% # only keep variable of interest
@@ -404,7 +459,11 @@ results.balanced.compare <- bind_rows(results.first, results.second)
   results.balanced.compare <- bind_rows(results.balanced.compare, results.balanced.compare[5,]-results.balanced.compare[2,])
   results.balanced.compare <- bind_rows(results.balanced.compare, results.balanced.compare[6,]-results.balanced.compare[3,])
   results.balanced.compare$group<- c("Control (Pennsylvania)", "Treatment (New Jersey)", "Difference", "Control (Pennsylvania)", "Treatment (New Jersey)", "Difference", "Control (Pennsylvania)", "Treatment (New Jersey)", "Difference")
-  kable(results.balanced.compare, digits=2)  
+  kable(results.balanced.compare, digits=2)    
+  
+  
+  arrange(df, x_status.sec.interview, desc = TRUE)
+
   
 ```
 
