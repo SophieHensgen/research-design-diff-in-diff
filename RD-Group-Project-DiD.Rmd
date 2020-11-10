@@ -767,6 +767,8 @@ results.compare.r5 <- bind_rows(resultsc.compare.r2, resultsc.compare.r1)
 
 ```{r Table 3 - Average Employment per store before and after the raise, column 7-8, echo=FALSE}
 
+# Sophie 
+
 # Difference between Low and High & Mid-range and high
 
 # 1st row: Before Treatment
@@ -813,7 +815,69 @@ kable(results.low.r5, digits=2)
 
 # Sophie 
 
+#First select you data set, with which you want to work
 
+ df2 <- dplyr::select(df, 
+                         y_full.emp,
+                         y_full.emp.sec,
+                         d_nj,
+                         x_bk,
+                         x_kfc,
+                         x_roys,
+                         x_co.owned,
+                         x_st.wage.before,
+                         x_st.wage.after,
+                         x_status.sec.interview,
+                         x_south.j,
+                         x_central.j,
+                         x_northeast.pa,
+                         x_easton.pa) %>%
+           mutate(x_st.wage.after = case_when(x_status.sec.interview == 3 ~ NA_character_, # these stores get an NA
+                                              TRUE ~ as.character(x_st.wage.after)),
+                  x_st.wage.after = as.numeric(x_st.wage.after)) %>%
+                  na.omit()
+
+# Model (i)/Column 1: Base
+
+  fit.c1 <- lm((y_full.emp.sec-y_full.emp) ~ d_nj,
+             data = df2)
+  summary(fit.c1)
+
+# Model (ii)/Column 2: Controls Chain/Ownership
+  fit.c2 <- lm((y_full.emp.sec-y_full.emp) ~ 
+               d_nj + x_bk + x_kfc + x_roys + x_co.owned, 
+             data = df2)
+  summary(fit.c2)
+  
+# Model (iii)/Column 3: Initial Wage gap - no controls
+  
+# Create new variable were old is substracted from the new minimum
+  
+  df2 <- df2 %>%
+    mutate(d_ini.wage.gap = 5.05 - x_st.wage.before)
+  
+# then linear model/regression
+  
+  fit.c3 <- lm((y_full.emp.sec-y_full.emp) ~ 
+               d_ini.wage.gap, 
+             data = df2)
+  summary(fit.c3)
+
+# Model (iv)/Column 4: Initial Wage gap - Controls Chain/Ownership
+  
+  fit.c4 <- lm((y_full.emp.sec-y_full.emp) ~ 
+               d_ini.wage.gap + x_bk + x_kfc + x_roys + x_co.owned, 
+             data = df2)
+  summary(fit.c4)  
+  
+# Model (iv)/Column 4: Initial Wage gap - Controls Chain/Ownership + Regions 
+  
+  fit.c5 <- lm((y_full.emp.sec-y_full.emp) ~ 
+               d_ini.wage.gap + x_bk + x_kfc + x_roys + x_co.owned + x_south.j + x_central.j + x_northeast.pa + x_easton.pa, 
+             data = df2)
+  summary(fit.c5)  
+  
+  
 ```
 
 ```{r Table 5 - Specification tests of reduced form employment models, echo=FALSE}
