@@ -321,7 +321,7 @@ p.after
 
 # Sophie
 
-# Table 3: Column 1-3, Rows from left to right)
+# Table 3: Column 1-3, from left to right)
 
 ## 1st row: MEANs and SEs across subgroups
   
@@ -478,7 +478,7 @@ results.r1.c4 <- df %>%
   dplyr::select(y_full.emp) %>%
   group_by(N = n()) %>%
   summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
-  mutate(n = N - y_full.emp.sec_na_sum) %>% 
+  mutate(n = N - y_full.emp_na_sum) %>% 
   mutate(se = sqrt(y_full.emp_var/n))
 
 # Column 5
@@ -489,7 +489,7 @@ results.r1.c5 <- df %>%
   dplyr::select(y_full.emp) %>%
   group_by(N = n()) %>%
   summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
-  mutate(n = N - y_full.emp.sec_na_sum) %>% 
+  mutate(n = N - y_full.emp_na_sum) %>% 
   mutate(se = sqrt(y_full.emp_var/n))
 
 # Column 6
@@ -500,7 +500,7 @@ results.r1.c6 <- df %>%
   dplyr::select(y_full.emp) %>%
   group_by(N = n()) %>%
   summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
-  mutate(n = N - y_full.emp.sec_na_sum) %>% 
+  mutate(n = N - y_full.emp_na_sum) %>% 
   mutate(se = sqrt(y_full.emp_var/n))
 
 # Combining all the results for row 1
@@ -508,7 +508,7 @@ results.r1.c6 <- df %>%
 results.compare.r1 <- bind_rows(results.r1.c4, results.r1.c5, results.r1.c6)
 kable(results.compare.r1, digits=2)
 
-
+####################################################################################################
 
 ## 2nd row: After treatment
 
@@ -552,7 +552,7 @@ results.r2.c6 <- df %>%
 results.compare.r2 <- bind_rows(results.r2.c4, results.r2.c5, results.r2.c6)
 kable(results.compare.r2, digits=2)
 
-
+####################################################################################################
 
 ## 3rd row: After treatment
 
@@ -651,24 +651,33 @@ resultsb.r2.c6 <- df.balanced %>%
 # Combining all the results for row 1
 
 resultsb.compare.r2 <- bind_rows(resultsb.r2.c4, resultsb.r2.c5, resultsb.r2.c6)
-kable(results.compare.r2, digits=2)
+kable(resultsb.compare.r2, digits=2)
 
 ## Third row: After treatment
 # suddenly some rows have nas, i dont now why!
 
-resultsb.compare.r4 <- bind_rows(resultsb.compare.r2, resultsb.compare.r1)
-  #results.compare.r3 <- select(results.compare.r3, -8)
-  resultsb.compare.r4 <- bind_rows(resultsb.compare.r4, resultsb.compare.r4[4,]-resultsb.compare.r4[1,])
-  resultsb.compare.r4 <- bind_rows(resultsb.compare.r4, resultsb.compare.r4[5,]-resultsb.compare.r4[2,])
-  resultsb.compare.r4 <- bind_rows(resultsb.compare.r4, resultsb.compare.r4[6,]-resultsb.compare.r4[3,])
-  resultsb.compare.r4$group<- c()
-  kable(resultsb.compare.r4, digits=2) 
+results.compare.r4 <- bind_rows(resultsb.compare.r2, resultsb.compare.r1)
+  results.compare.r4 <- bind_rows(results.compare.r4, results.compare.r4[4,]-results.compare.r4[1,])
+  results.compare.r4 <- bind_rows(results.compare.r4, results.compare.r4[5,]-results.compare.r4[2,])
+  results.compare.r4 <- bind_rows(results.compare.r4, results.compare.r4[6,]-results.compare.r4[3,])
+  results.compare.r4$group<- c()
+  kable(results.compare.r4, digits=2) 
+ 
+####################################################################################################
   
- # 5th row 
+# 5th Rows: Permanantely closed = 0
   
+# Create a new variable where permanently closed stores have a FTE of 0
+df$y_full.emp.sec.closed <- df$y_full.emp.sec
+df$y_full.emp.sec.closed[df$x_status.sec.interview == 3] <- 0
+    
+# Filter complete cases across all columns
+df.closed <- df %>% filter(complete.cases(.))
+
+## Before Treatment Means
 # Column 4 
   
-  resultsb.r1.c4 <- df.balanced %>%
+  resultsc.r1.c4 <- df.closed %>%
   group_by(d_nj) %>%
   filter(d_nj == 1 & x_st.wage.before == 4.25) %>%
   dplyr::select(y_full.emp) %>%
@@ -679,7 +688,7 @@ resultsb.compare.r4 <- bind_rows(resultsb.compare.r2, resultsb.compare.r1)
 
 # Column 5
 
-resultsb.r1.c5 <- df.balanced %>%
+resultsc.r1.c5 <- df.closed %>%
   group_by(d_nj) %>%
   filter(x_st.wage.before > 4.25 & x_st.wage.before < 5 & d_nj == 1) %>%
   dplyr::select(y_full.emp) %>%
@@ -690,7 +699,7 @@ resultsb.r1.c5 <- df.balanced %>%
 
 # Column 6
 
-resultsb.r1.c6 <- df.balanced %>%
+resultsc.r1.c6 <- df.closed %>%
   group_by(d_nj) %>%
   filter(x_st.wage.before >= 5 & d_nj == 1) %>%
   dplyr::select(y_full.emp) %>%
@@ -701,15 +710,14 @@ resultsb.r1.c6 <- df.balanced %>%
 
 # Combining all the results for row 1
 
-resultsb.compare.r1 <- bind_rows(resultsb.r1.c4, resultsb.r1.c5, resultsb.r1.c6)
-kable(resultsb.compare.r1, digits=2)
+resultsc.compare.r1 <- bind_rows(resultsc.r1.c4, resultsc.r1.c5, resultsc.r1.c6)
+kable(resultsc.compare.r1, digits=2)
 
 
-## Second row: After treatment
-
+## After Treatment Means
 # Column 4
 
-resultsb.r2.c4 <- df.balanced %>%
+resultsc.r2.c4 <- df.closed %>%
   group_by(d_nj) %>%
   filter(d_nj == 1 & x_st.wage.before == 4.25) %>%
   dplyr::select(y_full.emp.sec) %>%
@@ -719,9 +727,8 @@ resultsb.r2.c4 <- df.balanced %>%
   mutate(se = sqrt(y_full.emp.sec_var/n))
 
 # Column 5 
-#something is wrong here
 
-resultsb.r2.c5 <- df.balanced %>%
+resultsc.r2.c5 <- df.closed %>%
   group_by(d_nj) %>%
   filter(x_st.wage.before > 4.25 & x_st.wage.before < 5 & d_nj == 1) %>%
   dplyr::select(y_full.emp.sec) %>%
@@ -731,9 +738,8 @@ resultsb.r2.c5 <- df.balanced %>%
   mutate(se = sqrt(y_full.emp.sec_var/n))
 
 # Column 6
-#something is wrong here
 
-resultsb.r2.c6 <- df.balanced %>%
+resultsc.r2.c6 <- df.closed %>%
   group_by(d_nj) %>%
   filter(x_st.wage.before > 4.99 & d_nj == 1) %>%
   dplyr::select(y_full.emp.sec) %>%
@@ -744,27 +750,62 @@ resultsb.r2.c6 <- df.balanced %>%
 
 # Combining all the results for row 1
 
-resultsb.compare.r2 <- bind_rows(resultsb.r2.c4, resultsb.r2.c5, resultsb.r2.c6)
-kable(results.compare.r2, digits=2)
+resultsc.compare.r2 <- bind_rows(resultsc.r2.c4, resultsc.r2.c5, resultsc.r2.c6)
+kable(resultsc.compare.r2, digits=2)
 
-## Third row: After treatment
+# mean differences
 # suddenly some rows have nas, i dont now why!
 
-resultsb.compare.r4 <- bind_rows(resultsb.compare.r2, resultsb.compare.r1)
-  #results.compare.r3 <- select(results.compare.r3, -8)
-  resultsb.compare.r4 <- bind_rows(resultsb.compare.r4, resultsb.compare.r4[4,]-resultsb.compare.r4[1,])
-  resultsb.compare.r4 <- bind_rows(resultsb.compare.r4, resultsb.compare.r4[5,]-resultsb.compare.r4[2,])
-  resultsb.compare.r4 <- bind_rows(resultsb.compare.r4, resultsb.compare.r4[6,]-resultsb.compare.r4[3,])
-  resultsb.compare.r4$group<- c()
-  kable(resultsb.compare.r4, digits=2) 
+results.compare.r5 <- bind_rows(resultsc.compare.r2, resultsc.compare.r1)
+  results.compare.r5 <- bind_rows(results.compare.r5, results.compare.r5[4,]-results.compare.r5[1,])
+  results.compare.r5 <- bind_rows(results.compare.r5, results.compare.r5[5,]-results.compare.r5[2,])
+  results.compare.r5 <- bind_rows(results.compare.r5, results.compare.r5[6,]-results.compare.r5[3,])
+  results.compare.r5$group<- c()
+  kable(results.compare.r5, digits=2) 
   
 ```
 
 ```{r Table 3 - Average Employment per store before and after the raise, column 7-8, echo=FALSE}
 
-# Difference between Low and High & Midrange and high
+# Difference between Low and High & Mid-range and high
 
+# 1st row: Before Treatment
 
+results.low.r1 <- bind_rows(results.compare.r1, results.compare.r1[3,3]-results.compare.r1[1,3])
+results.low.r1 <- bind_rows(results.low.r1, results.compare.r1[3,3]-results.compare.r1[2,3])
+kable(results.low.r1, digits=2)
+
+####################################################################################################
+
+# 2nd row: After Treatment
+
+results.low.r2 <- bind_rows(results.compare.r2, results.compare.r2[3,3]-results.compare.r2[1,3])
+results.low.r2 <- bind_rows(results.low.r2, results.compare.r2[3,3]-results.compare.r2[2,3])
+kable(results.low.r2, digits=2)
+
+####################################################################################################
+
+# 3rd row: Change in Mean of FTE --> because there is an error before this does not work yet!
+
+results.low.r3 <- bind_rows(results.compare.r3, results.compare.r3[9,3]-results.compare.r3[7,3])
+results.low.r3 <- bind_rows(results.low.r3, results.compare.r3[9,3]-results.compare.r3[8,3])
+kable(results.low.r3, digits=2)
+
+####################################################################################################
+
+# 4th row: Change in Mean of FTE in balanced sample
+
+results.low.r4 <- bind_rows(results.compare.r4, results.compare.r4[9,3]-results.compare.r4[7,3])
+results.low.r4 <- bind_rows(results.low.r4, results.compare.r4[9,3]-results.compare.r4[8,3])
+kable(results.low.r4, digits=2)
+
+####################################################################################################
+
+# 5th row: Change in Mean of FTE, closed stores = 0
+
+results.low.r5 <- bind_rows(results.compare.r5, results.compare.r5[9,3]-results.compare.r5[7,3])
+results.low.r5 <- bind_rows(results.low.r5, results.compare.r5[9,3]-results.compare.r5[8,3])
+kable(results.low.r5, digits=2)
 
 ```
 
