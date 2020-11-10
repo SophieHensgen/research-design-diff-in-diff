@@ -145,6 +145,8 @@ df$d_pa <- gsub(2, 1, df$d_pa)
 df[,12:14] <- lapply(df[,12:14], as.factor) #first convert into factor, and then into numeric. if tried to convert directly from character into numeric an error will appear.
 df[,12:14] <- lapply(df[,12:14], as.numeric)
 
+df[,15] <- lapply(df[,15], as.numeric)
+
 df[,16:17] <- lapply(df[,16:17], as.factor) 
 df[,16:17] <- lapply(df[,16:17], as.numeric)
 
@@ -156,6 +158,8 @@ df[,23:27] <- lapply(df[,23:27], as.numeric)
 
 df[,31:34] <- lapply(df[,31:34], as.factor)
 df[,31:34] <- lapply(df[,31:34], as.numeric)
+
+df[,35] <- lapply(df[,35], as.numeric)
 
 df[,36:46] <- lapply(df[,36:46], as.factor)
 df[,36:46] <- lapply(df[,36:46], as.numeric)
@@ -317,7 +321,7 @@ p.after
 
 # Sophie
 
-# Table 3: Column 1-3, Row 1 (from left to right)
+# Table 3: Column 1-3, Rows from left to right)
 
 ## 1st row: MEANs and SEs across subgroups
   
@@ -458,6 +462,104 @@ results.closed.compare <- bind_rows(results.first, results.second)
   
 ```
 
+```{r Table 3 - Average Employment per store before and after the raise, column 4-6, echo=FALSE}
+
+# Sophie 
+
+### Table 3: Column 4-6, Row 1 (from left to right)
+
+## First row: FTE before Treatment
+
+# Column 4
+
+results.r1.c4 <- df %>%
+  group_by(d_nj) %>%
+  dplyr::select(d_nj, x_st.wage.before, y_full.emp) %>%
+  filter(d_nj == 1 & x_st.wage.before == 4.25) %>%
+  group_by(N = n()) %>%
+  summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
+  mutate(n = N - d_nj_na_sum) %>% 
+  mutate(se = sqrt(d_nj_var/n))
+
+# Column 5
+
+results.r1.c5 <- df %>%
+  group_by(d_nj) %>%
+  dplyr::select(d_nj, x_st.wage.before, y_full.emp) %>%
+  filter(x_st.wage.before > 4.25 & x_st.wage.before < 5 & d_nj == 1) %>%
+  group_by(N = n()) %>%
+  summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
+  mutate(n = N - d_nj_na_sum) %>% 
+  mutate(se = sqrt(d_nj_var/n))
+
+# Column 6
+
+results.r1.c6 <- df %>%
+  group_by(d_nj) %>%
+  dplyr::select(d_nj, x_st.wage.before, y_full.emp) %>%
+  filter(x_st.wage.before > 4.99 & d_nj == 1) %>%
+  group_by(N = n()) %>%
+  summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
+  mutate(n = N - d_nj_na_sum) %>% 
+  mutate(se = sqrt(d_nj_var/n))
+
+# Combining all the results for row 1
+
+results.compare.r1 <- bind_rows(results.r1.c4, results.r1.c5, results.r1.c6)
+kable(results.compare.r1, digits=2)
+
+
+## Second row: After treatment
+
+# Column 4
+
+r2.c4 <- df %>%
+  group_by(d_nj) %>%
+  filter(d_nj == 1 & x_st.wage.before == 4.25) %>%
+  dplyr::select(y_full.emp.sec) %>%
+  group_by(N = n()) %>%
+  summarize_all(funs(mean = mean, var = var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
+  mutate(n = N - d_nj_na_sum) %>% 
+  mutate(se = sqrt(d_nj_var/n))
+
+# Column 5
+
+r2.c5 <- df %>%
+  group_by(d_nj) %>%
+  filter(x_st.wage.before > 4.25 & x_st.wage.before < 5 & d_nj == 1) %>%
+  dplyr::select(y_full.emp.sec) %>%
+  group_by(N = n()) %>%
+  summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
+  mutate(n = N - d_nj_na_sum) %>% 
+  mutate(se = sqrt(d_nj_var/n))
+
+# Column 6
+
+r2.c6 <- df %>%
+  group_by(d_nj) %>%
+  filter(x_st.wage.before > 4.99 & d_nj == 1) %>%
+  dplyr::select(y_full.emp) %>%
+  group_by(N = n()) %>%
+  summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
+  mutate(n = N - d_nj_na_sum) %>% 
+  mutate(se = sqrt(d_nj_var/n))
+
+# Combining all the results for row 1
+
+results.compare.r2 <- bind_rows(r2.c4, r2.c5) #, r2.c6)
+kable(results.compare.r2, digits=2)
+
+## Third row: After treatment
+
+#results.compare.r3 <- rbind(results.compare.r2, results.compare.r1)
+  #results.compare.r3 <- select(results.compare.r3, )
+  results.compare.r3 <- bind_rows(results.compare.r3, results.compare.r3[4,]-results.compare.r3[1,])
+  results.compare.r3 <- bind_rows(results.compare.r3, results.compare.r3[5,]-results.compare.r3[2,])
+  results.compare.r3 <- bind_rows(results.compare.r3, results.compare.r3[6,]-results.compare.r3[3,])
+  results.compare.r3$group<- c()
+  kable(results.compare, digits=2)  
+```
+
 ```{r Table 4 - Reduced Form Models for change in employment, echo=FALSE}
 
 # Sophie 
@@ -471,6 +573,35 @@ results.closed.compare <- bind_rows(results.first, results.second)
 
 
 ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
