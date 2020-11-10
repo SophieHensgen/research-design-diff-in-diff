@@ -129,9 +129,9 @@ df$x_wendys <- gsub(4, 1, df$x_wendys)
 df$d_nj <- df$d_state
 
 # d_nj dummy variable for restaurants in PA (1) or not (0)
-df$d_pa <- gsub(1, 2, df$d_state)
-df$d_pa <- gsub(0, 1, df$d_pa)
-df$d_pa <- gsub(2, 0, df$d_pa)
+df$d_pa <- gsub(0, 2, df$d_state)
+df$d_pa <- gsub(1, 0, df$d_pa)
+df$d_pa <- gsub(2, 1, df$d_pa)
 
 
 ```
@@ -140,8 +140,11 @@ df$d_pa <- gsub(2, 0, df$d_pa)
 
 # Some variables are a character vector, which cannot be used in a summary. Therefore they have to be changed. 
 
-df[,12:17] <- lapply(df[,12:17], as.factor) #first convert into factor, and then into numeric. if tried to convert idrectly from character into numeric a error will appear.
-df[,12:17] <- lapply(df[,12:17], as.numeric)
+df[,12:14] <- lapply(df[,12:14], as.factor) #first convert into factor, and then into numeric. if tried to convert directly from character into numeric an error will appear.
+df[,12:14] <- lapply(df[,12:14], as.numeric)
+
+df[,16:17] <- lapply(df[,16:17], as.factor) 
+df[,16:17] <- lapply(df[,16:17], as.numeric)
 
 df[,19] <- lapply(df[,19], as.factor)
 df[,19] <- lapply(df[,19], as.numeric)
@@ -149,14 +152,17 @@ df[,19] <- lapply(df[,19], as.numeric)
 df[,23:27] <- lapply(df[,23:27], as.factor)
 df[,23:27] <- lapply(df[,23:27], as.numeric)
 
-df[,31:46] <- lapply(df[,31:46], as.factor)
-df[,31:46] <- lapply(df[,31:46], as.numeric)
+df[,31:34] <- lapply(df[,31:34], as.factor)
+df[,31:34] <- lapply(df[,31:34], as.numeric)
 
-df[,48:51] <- lapply(df[,48:51], as.factor)
-df[,48:51] <- lapply(df[,48:51], as.numeric)
+df[,36:46] <- lapply(df[,36:46], as.factor)
+df[,36:46] <- lapply(df[,36:46], as.numeric)
 
-df[,53] <- lapply(df[,53], as.factor)
-df[,53] <- lapply(df[,53], as.numeric)
+#convert into integer as it is a dummy variable with only 0 and 1, here convert directly to integer as the numbers would change if you first convert into factor
+df[,48:51] <- lapply(df[,48:51], as.integer)
+
+df[,53] <- lapply(df[,53], as.integer)
+
 
 str(df)
 ```
@@ -243,21 +249,22 @@ x_st.wage.before.pa <- df$x_st.wage.before[df$d_pa == 1]
 # Plot for before treatment
 
 # Set histogram bins
-xbins <- list(start=4.20, end=5.60)
+xbins <- list(start=4.20, end=5.60, size = 0.1)
 
 # 
 p.before <- plot_ly(alpha = 0.5) %>%
   add_histogram(x = x_st.wage.before.nj, 
-                  #xbins = c(4.20, 5.60, 0.5),
+                  xbins = xbins,
                   histnorm = "percent", 
                   name = "Wage Before (New Jersey)") %>%
   add_histogram(x = x_st.wage.before.pa, 
-                  #xbins = c(4.20, 5.60, 0.5),
+                  xbins = xbins,
                   histnorm = "percent",
                   name = "Wage Before (Pennsylvania)") %>%
   layout(barmode = "group", title = "February 1992",
            xaxis = list(tickvals=seq(4.25, 5.55, 0.1),
-                        title = "Wage in $ per hour"),
+                        title = "Wage in $ per hour",
+                        tickangle = 90),
            yaxis = list(range = c(0, 50)),
                       margin = list(b = 100, 
                           l = 80, 
@@ -277,22 +284,23 @@ x_st.wage.after.pa <- df$x_st.wage.after[df$d_pa == 1]
 
 p.after <- plot_ly(alpha = 0.5) %>%
   add_histogram(x = x_st.wage.after.nj, 
-                  xbins = c(4.25, 5.60, 0.5),
+                  xbins = xbins,
                   histnorm = "percent", 
                   name = "Wage After (New Jersey)") %>%
   add_histogram(x = x_st.wage.after.pa, 
-                  xbins = c(4.25, 5.60, 0.5),
+                  xbins = xbins,
                   histnorm = "percent",
                   name = "Wage After (Pennsylvania)") %>%
   layout(barmode = "group", title = "February 1992",
            xaxis = list(tickvals=seq(4.25, 5.55, 0.1),
-                        title = "Wage in $ per hour"),
+                        title = "Wage in $ per hour",
+                        tickangle = 90),
            yaxis = list(range = c(0, 50)),
                       margin = list(b = 100, 
                           l = 80, 
                           r = 80, 
                           t = 80, 
-                          pad = 0, 
+                          pad = 0,
                           autoexpand = TRUE))
 
 p.after
