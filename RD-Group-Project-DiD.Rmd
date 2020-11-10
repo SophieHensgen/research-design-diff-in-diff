@@ -12,6 +12,8 @@ library(readr)
 library(tidyverse)
 library(stargazer)
 library(plotly)
+library(kableExtra)
+library(naniar)
 ```
 
 ## Load Data Set
@@ -178,6 +180,11 @@ df.select <- df %>%
 stargazer(data.frame(df.select), type = "text", summary = TRUE)
 
 ```
+```{r replace . with na, echo=FALSE}
+
+  df <- df %>% replace_with_na(replace = list(y_full.emp = "." , x_st.wage.before = "." ,x_st.wage.after = ".", y_full.emp.sec = ".")) 
+
+```
 
 
 ```{r Table 1 - Sample Size and response rate, echo=FALSE}
@@ -265,7 +272,7 @@ p.before <- plot_ly(alpha = 0.5) %>%
            xaxis = list(tickvals=seq(4.25, 5.55, 0.1),
                         title = "Wage in $ per hour",
                         tickangle = 90),
-           yaxis = list(range = c(0, 50)),
+           yaxis = list(range = c(0, 100)),
                       margin = list(b = 100, 
                           l = 80, 
                           r = 80, 
@@ -295,7 +302,7 @@ p.after <- plot_ly(alpha = 0.5) %>%
            xaxis = list(tickvals=seq(4.25, 5.55, 0.1),
                         title = "Wage in $ per hour",
                         tickangle = 90),
-           yaxis = list(range = c(0, 50)),
+           yaxis = list(range = c(0, 100)),
                       margin = list(b = 100, 
                           l = 80, 
                           r = 80, 
@@ -310,7 +317,95 @@ p.after
 
 # Sophie
 
+# Table 3: Column 1-3, Row 1 (from left to right)
 
+## 1st row: MEANs and SEs across subgroups
+  
+results.first <- df %>% 
+            group_by(d_nj) %>% # group_by the treatment variable
+            dplyr::select(d_nj, y_full.emp) %>% # only keep variable of interest
+            group_by(N = n(), .add = TRUE) %>% # count number of rows
+            summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
+            mutate(n = N - na_sum) %>% 
+            mutate(se = sqrt(var/n))
+
+# Add row with differences
+  results.first <- bind_rows(results.first, results.first[2,]-results.first[1,])
+  results.first$group<- c("Control (Pennsylvania)", "Treatment (New Jersey)", "Difference")
+  kable(results.first, digits=2)
+
+# Calculate SE for difference: SE = SQR(VAR/N + VAR/N)
+  diff_se <- sqrt(results.first$var[1]/results.first$n[1] + results.first$var[2]/results.first$n[2])
+  diff_se
+  
+## 2nd row: MEANs and SEs across subgroups
+  
+results.second <- df %>% 
+            group_by(d_nj) %>% # group_by the treatment variable
+            dplyr::select(d_nj, y_full.emp.sec) %>% # only keep variable of interest - here dummy for state and employment for second time point (after treatment)
+            group_by(N = n(), .add = TRUE) %>% # count number of rows
+            summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
+            mutate(n = N - na_sum) %>% 
+            mutate(se = sqrt(var/n))
+
+   
+# Add row with differences
+  results.second <- bind_rows(results.second, results.second[2,]-results.second[1,])
+  results.second$group<- c("Control (Pennsylvania)", "Treatment (New Jersey)", "Difference")
+  kable(results.second, digits=2)
+  
+## 3rd row: Change in MEANs and SEs between both time points
+
+  results.compare <- bind_rows(results.first, results.second)
+  results.compare <- select(results.compare, -8)
+  results.compare <- bind_rows(results.compare, results.compare[4,]-results.compare[1,])
+  results.compare <- bind_rows(results.compare, results.compare[5,]-results.compare[2,])
+  results.compare <- bind_rows(results.compare, results.compare[6,]-results.compare[3,])
+  results.compare$group<- c("Control (Pennsylvania)", "Treatment (New Jersey)", "Difference", "Control (Pennsylvania)", "Treatment (New Jersey)", "Difference", "Control (Pennsylvania)", "Treatment (New Jersey)", "Difference")
+  kable(results.compare, digits=2)  
+  
+## 4th row: Change in MEANs and SEs between both time points, balanced sample
+  
+# Filter observations in both waves
+  df.balanced <- df %>% na.omit
+    
+# Filter complete cases across all columns
+  df.balanced <- df %>% filter(complete.cases(.)) 
+    
+results.balanced.first <- df.balanced %>% 
+            group_by(d_nj) %>% # group_by the treatment variable
+            dplyr::select(d_nj, y_full.emp) %>% # only keep variable of interest
+            group_by(N = n(), .add = TRUE) %>% # count number of rows
+            summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
+            mutate(n = N - na_sum) %>% 
+            mutate(se = sqrt(var/n))
+
+# Add row with differences
+  results.balanced.first <- bind_rows(results.balanced.first, results.balanced.first[2,]-results.balanced.first[1,])
+  kable(results.balanced.first, digits=2)
+
+results.balanced.second <- df.balanced %>% 
+            group_by(d_nj) %>% # group_by the treatment variable
+            dplyr::select(d_nj, y_full.emp.sec) %>% # only keep variable of interest 
+            group_by(N = n(), .add = TRUE) %>% # count number of rows
+            summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
+            mutate(n = N - na_sum) %>% 
+            mutate(se = sqrt(var/n))
+
+   
+# Add row with differences
+  results.balanced.second <- bind_rows(results.balanced.second, results.balanced.second[2,]-results.balanced.second[1,])
+  results.balanced.second$group<- c("Control (Pennsylvania)", "Treatment (New Jersey)", "Difference")
+  kable(results.balanced.second, digits=2)
+  
+results.balanced.compare <- bind_rows(results.first, results.second)
+  results.balanced.compare <- select(results.balanced.compare, -8)
+  results.balanced.compare <- bind_rows(results.balanced.compare, results.balanced.compare[4,]-results.balanced.compare[1,])
+  results.balanced.compare <- bind_rows(results.balanced.compare, results.balanced.compare[5,]-results.balanced.compare[2,])
+  results.balanced.compare <- bind_rows(results.balanced.compare, results.balanced.compare[6,]-results.balanced.compare[3,])
+  results.balanced.compare$group<- c("Control (Pennsylvania)", "Treatment (New Jersey)", "Difference", "Control (Pennsylvania)", "Treatment (New Jersey)", "Difference", "Control (Pennsylvania)", "Treatment (New Jersey)", "Difference")
+  kable(results.balanced.compare, digits=2)  
+  
 ```
 
 ```{r Table 4 - Reduced Form Models for change in employment, echo=FALSE}
