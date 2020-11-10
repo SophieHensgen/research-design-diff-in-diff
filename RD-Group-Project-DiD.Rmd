@@ -468,40 +468,40 @@ results.closed.compare <- bind_rows(results.first, results.second)
 
 ### Table 3: Column 4-6, Row 1 (from left to right)
 
-## First row: FTE before Treatment
+## 1st row: FTE before Treatment
 
 # Column 4
 
 results.r1.c4 <- df %>%
   group_by(d_nj) %>%
-  dplyr::select(d_nj, x_st.wage.before, y_full.emp) %>%
   filter(d_nj == 1 & x_st.wage.before == 4.25) %>%
+  dplyr::select(y_full.emp) %>%
   group_by(N = n()) %>%
   summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
-  mutate(n = N - d_nj_na_sum) %>% 
-  mutate(se = sqrt(d_nj_var/n))
+  mutate(n = N - y_full.emp.sec_na_sum) %>% 
+  mutate(se = sqrt(y_full.emp_var/n))
 
 # Column 5
 
 results.r1.c5 <- df %>%
   group_by(d_nj) %>%
-  dplyr::select(d_nj, x_st.wage.before, y_full.emp) %>%
   filter(x_st.wage.before > 4.25 & x_st.wage.before < 5 & d_nj == 1) %>%
+  dplyr::select(y_full.emp) %>%
   group_by(N = n()) %>%
   summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
-  mutate(n = N - d_nj_na_sum) %>% 
-  mutate(se = sqrt(d_nj_var/n))
+  mutate(n = N - y_full.emp.sec_na_sum) %>% 
+  mutate(se = sqrt(y_full.emp_var/n))
 
 # Column 6
 
 results.r1.c6 <- df %>%
   group_by(d_nj) %>%
-  dplyr::select(d_nj, x_st.wage.before, y_full.emp) %>%
   filter(x_st.wage.before > 4.99 & d_nj == 1) %>%
+  dplyr::select(y_full.emp) %>%
   group_by(N = n()) %>%
   summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
-  mutate(n = N - d_nj_na_sum) %>% 
-  mutate(se = sqrt(d_nj_var/n))
+  mutate(n = N - y_full.emp.sec_na_sum) %>% 
+  mutate(se = sqrt(y_full.emp_var/n))
 
 # Combining all the results for row 1
 
@@ -509,55 +509,263 @@ results.compare.r1 <- bind_rows(results.r1.c4, results.r1.c5, results.r1.c6)
 kable(results.compare.r1, digits=2)
 
 
-## Second row: After treatment
+
+## 2nd row: After treatment
 
 # Column 4
 
-r2.c4 <- df %>%
+results.r2.c4 <- df %>%
   group_by(d_nj) %>%
   filter(d_nj == 1 & x_st.wage.before == 4.25) %>%
   dplyr::select(y_full.emp.sec) %>%
   group_by(N = n()) %>%
   summarize_all(funs(mean = mean, var = var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
-  mutate(n = N - d_nj_na_sum) %>% 
-  mutate(se = sqrt(d_nj_var/n))
+  mutate(n = N - y_full.emp.sec_na_sum) %>% 
+  mutate(se = sqrt(y_full.emp.sec_var/n))
 
-# Column 5
+# Column 5 
+#something is wrong here
 
-r2.c5 <- df %>%
+results.r2.c5 <- df %>%
   group_by(d_nj) %>%
   filter(x_st.wage.before > 4.25 & x_st.wage.before < 5 & d_nj == 1) %>%
   dplyr::select(y_full.emp.sec) %>%
   group_by(N = n()) %>%
   summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
-  mutate(n = N - d_nj_na_sum) %>% 
-  mutate(se = sqrt(d_nj_var/n))
+  mutate(n = N - y_full.emp.sec_na_sum) %>% 
+  mutate(se = sqrt(y_full.emp.sec_var/n))
 
 # Column 6
+#something is wrong here
 
-r2.c6 <- df %>%
+results.r2.c6 <- df %>%
   group_by(d_nj) %>%
   filter(x_st.wage.before > 4.99 & d_nj == 1) %>%
-  dplyr::select(y_full.emp) %>%
+  dplyr::select(y_full.emp.sec) %>%
   group_by(N = n()) %>%
   summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
-  mutate(n = N - d_nj_na_sum) %>% 
-  mutate(se = sqrt(d_nj_var/n))
+  mutate(n = N - y_full.emp.sec_na_sum) %>% 
+  mutate(se = sqrt(y_full.emp.sec_var/n))
 
 # Combining all the results for row 1
 
-results.compare.r2 <- bind_rows(r2.c4, r2.c5) #, r2.c6)
+results.compare.r2 <- bind_rows(results.r2.c4, results.r2.c5, results.r2.c6)
 kable(results.compare.r2, digits=2)
 
-## Third row: After treatment
 
-#results.compare.r3 <- rbind(results.compare.r2, results.compare.r1)
-  #results.compare.r3 <- select(results.compare.r3, )
+
+## 3rd row: After treatment
+
+results.compare.r3 <- bind_rows(results.compare.r2, results.compare.r1)
+  #results.compare.r3 <- select(results.compare.r3, -8)
   results.compare.r3 <- bind_rows(results.compare.r3, results.compare.r3[4,]-results.compare.r3[1,])
   results.compare.r3 <- bind_rows(results.compare.r3, results.compare.r3[5,]-results.compare.r3[2,])
   results.compare.r3 <- bind_rows(results.compare.r3, results.compare.r3[6,]-results.compare.r3[3,])
   results.compare.r3$group<- c()
-  kable(results.compare, digits=2)  
+  kable(results.compare.r3, digits=2) 
+  
+####################################################################################################  
+  
+## 4th row: Change in mean FTE in balanced sample
+  
+# create a balanced data set
+  
+  df.balanced <- df %>% filter(complete.cases(.))   
+  
+# Column 4 
+  
+  resultsb.r1.c4 <- df.balanced %>%
+  group_by(d_nj) %>%
+  filter(d_nj == 1 & x_st.wage.before == 4.25) %>%
+  dplyr::select(y_full.emp) %>%
+  group_by(N = n()) %>%
+  summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
+  mutate(n = N - y_full.emp_na_sum) %>% 
+  mutate(se = sqrt(y_full.emp_var/n))
+
+# Column 5
+
+resultsb.r1.c5 <- df.balanced %>%
+  group_by(d_nj) %>%
+  filter(x_st.wage.before > 4.25 & x_st.wage.before < 5 & d_nj == 1) %>%
+  dplyr::select(y_full.emp) %>%
+  group_by(N = n()) %>%
+  summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
+  mutate(n = N - y_full.emp_na_sum) %>% 
+  mutate(se = sqrt(y_full.emp_var/n))
+
+# Column 6
+
+resultsb.r1.c6 <- df.balanced %>%
+  group_by(d_nj) %>%
+  filter(x_st.wage.before >= 5 & d_nj == 1) %>%
+  dplyr::select(y_full.emp) %>%
+  group_by(N = n()) %>%
+  summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
+  mutate(n = N - y_full.emp_na_sum) %>% 
+  mutate(se = sqrt(y_full.emp_var/n))
+
+# Combining all the results for row 1
+
+resultsb.compare.r1 <- bind_rows(resultsb.r1.c4, resultsb.r1.c5, resultsb.r1.c6)
+kable(resultsb.compare.r1, digits=2)
+
+
+## Second row: After treatment
+
+# Column 4
+
+resultsb.r2.c4 <- df.balanced %>%
+  group_by(d_nj) %>%
+  filter(d_nj == 1 & x_st.wage.before == 4.25) %>%
+  dplyr::select(y_full.emp.sec) %>%
+  group_by(N = n()) %>%
+  summarize_all(funs(mean = mean, var = var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
+  mutate(n = N - y_full.emp.sec_na_sum) %>% 
+  mutate(se = sqrt(y_full.emp.sec_var/n))
+
+# Column 5 
+#something is wrong here
+
+resultsb.r2.c5 <- df.balanced %>%
+  group_by(d_nj) %>%
+  filter(x_st.wage.before > 4.25 & x_st.wage.before < 5 & d_nj == 1) %>%
+  dplyr::select(y_full.emp.sec) %>%
+  group_by(N = n()) %>%
+  summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
+  mutate(n = N - y_full.emp.sec_na_sum) %>% 
+  mutate(se = sqrt(y_full.emp.sec_var/n))
+
+# Column 6
+#something is wrong here
+
+resultsb.r2.c6 <- df.balanced %>%
+  group_by(d_nj) %>%
+  filter(x_st.wage.before > 4.99 & d_nj == 1) %>%
+  dplyr::select(y_full.emp.sec) %>%
+  group_by(N = n()) %>%
+  summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
+  mutate(n = N - y_full.emp.sec_na_sum) %>% 
+  mutate(se = sqrt(y_full.emp.sec_var/n))
+
+# Combining all the results for row 1
+
+resultsb.compare.r2 <- bind_rows(resultsb.r2.c4, resultsb.r2.c5, resultsb.r2.c6)
+kable(results.compare.r2, digits=2)
+
+## Third row: After treatment
+# suddenly some rows have nas, i dont now why!
+
+resultsb.compare.r4 <- bind_rows(resultsb.compare.r2, resultsb.compare.r1)
+  #results.compare.r3 <- select(results.compare.r3, -8)
+  resultsb.compare.r4 <- bind_rows(resultsb.compare.r4, resultsb.compare.r4[4,]-resultsb.compare.r4[1,])
+  resultsb.compare.r4 <- bind_rows(resultsb.compare.r4, resultsb.compare.r4[5,]-resultsb.compare.r4[2,])
+  resultsb.compare.r4 <- bind_rows(resultsb.compare.r4, resultsb.compare.r4[6,]-resultsb.compare.r4[3,])
+  resultsb.compare.r4$group<- c()
+  kable(resultsb.compare.r4, digits=2) 
+  
+ # 5th row 
+  
+# Column 4 
+  
+  resultsb.r1.c4 <- df.balanced %>%
+  group_by(d_nj) %>%
+  filter(d_nj == 1 & x_st.wage.before == 4.25) %>%
+  dplyr::select(y_full.emp) %>%
+  group_by(N = n()) %>%
+  summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
+  mutate(n = N - y_full.emp_na_sum) %>% 
+  mutate(se = sqrt(y_full.emp_var/n))
+
+# Column 5
+
+resultsb.r1.c5 <- df.balanced %>%
+  group_by(d_nj) %>%
+  filter(x_st.wage.before > 4.25 & x_st.wage.before < 5 & d_nj == 1) %>%
+  dplyr::select(y_full.emp) %>%
+  group_by(N = n()) %>%
+  summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
+  mutate(n = N - y_full.emp_na_sum) %>% 
+  mutate(se = sqrt(y_full.emp_var/n))
+
+# Column 6
+
+resultsb.r1.c6 <- df.balanced %>%
+  group_by(d_nj) %>%
+  filter(x_st.wage.before >= 5 & d_nj == 1) %>%
+  dplyr::select(y_full.emp) %>%
+  group_by(N = n()) %>%
+  summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
+  mutate(n = N - y_full.emp_na_sum) %>% 
+  mutate(se = sqrt(y_full.emp_var/n))
+
+# Combining all the results for row 1
+
+resultsb.compare.r1 <- bind_rows(resultsb.r1.c4, resultsb.r1.c5, resultsb.r1.c6)
+kable(resultsb.compare.r1, digits=2)
+
+
+## Second row: After treatment
+
+# Column 4
+
+resultsb.r2.c4 <- df.balanced %>%
+  group_by(d_nj) %>%
+  filter(d_nj == 1 & x_st.wage.before == 4.25) %>%
+  dplyr::select(y_full.emp.sec) %>%
+  group_by(N = n()) %>%
+  summarize_all(funs(mean = mean, var = var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
+  mutate(n = N - y_full.emp.sec_na_sum) %>% 
+  mutate(se = sqrt(y_full.emp.sec_var/n))
+
+# Column 5 
+#something is wrong here
+
+resultsb.r2.c5 <- df.balanced %>%
+  group_by(d_nj) %>%
+  filter(x_st.wage.before > 4.25 & x_st.wage.before < 5 & d_nj == 1) %>%
+  dplyr::select(y_full.emp.sec) %>%
+  group_by(N = n()) %>%
+  summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
+  mutate(n = N - y_full.emp.sec_na_sum) %>% 
+  mutate(se = sqrt(y_full.emp.sec_var/n))
+
+# Column 6
+#something is wrong here
+
+resultsb.r2.c6 <- df.balanced %>%
+  group_by(d_nj) %>%
+  filter(x_st.wage.before > 4.99 & d_nj == 1) %>%
+  dplyr::select(y_full.emp.sec) %>%
+  group_by(N = n()) %>%
+  summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
+  mutate(n = N - y_full.emp.sec_na_sum) %>% 
+  mutate(se = sqrt(y_full.emp.sec_var/n))
+
+# Combining all the results for row 1
+
+resultsb.compare.r2 <- bind_rows(resultsb.r2.c4, resultsb.r2.c5, resultsb.r2.c6)
+kable(results.compare.r2, digits=2)
+
+## Third row: After treatment
+# suddenly some rows have nas, i dont now why!
+
+resultsb.compare.r4 <- bind_rows(resultsb.compare.r2, resultsb.compare.r1)
+  #results.compare.r3 <- select(results.compare.r3, -8)
+  resultsb.compare.r4 <- bind_rows(resultsb.compare.r4, resultsb.compare.r4[4,]-resultsb.compare.r4[1,])
+  resultsb.compare.r4 <- bind_rows(resultsb.compare.r4, resultsb.compare.r4[5,]-resultsb.compare.r4[2,])
+  resultsb.compare.r4 <- bind_rows(resultsb.compare.r4, resultsb.compare.r4[6,]-resultsb.compare.r4[3,])
+  resultsb.compare.r4$group<- c()
+  kable(resultsb.compare.r4, digits=2) 
+  
+```
+
+```{r Table 3 - Average Employment per store before and after the raise, column 7-8, echo=FALSE}
+
+# Difference between Low and High & Midrange and high
+
+
+
 ```
 
 ```{r Table 4 - Reduced Form Models for change in employment, echo=FALSE}
