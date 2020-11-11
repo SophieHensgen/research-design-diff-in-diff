@@ -20,6 +20,11 @@ library(naniar)
 
 
 ```{r load data set}
+
+# Load in the data set the authors provided under this link "https://davidcard.berkeley.edu/data_sets.html"
+
+# data set is now called df
+
 df <- read.table("public.dat")
 df
 
@@ -30,7 +35,7 @@ df
 
 ```{r arrange data, echo=FALSE}
 
-# arrange data to better observe
+# Arrange data to better observe
 
 arrange(df, V1)
 
@@ -44,65 +49,69 @@ df <- as_tibble(df)
 ## Rename Columns for a better workflow
 # x stands for independent variable/covariates
 # y stands for dependent variable
-# d stands for treatement variable
+# d stands for treatment variable
 df <- df %>% 
   rename(
-    x_id = V1,
-    x_store.name = V2, #chain 1=bk; 2=kfc; 3=roys; 4=wendys
-    x_co.owned = V3,
-    d_state = V4, #
-    x_south.j = V5,
-    x_central.j = V6,
-    x_north.j = V7,
-    x_northeast.pa = V8,
-    x_easton.pa = V9,
-    x_shore.j = V10, #
-    x_callbacks.first = V11,
-    y_full.emp = V12,
-    y_part.emp = V13,
-    y_managers = V14,
-    x_st.wage.before = V15,
-    x_months.raise = V16, 
-    x_amount.raise = V17,
-    x_cash.bounty = V18,
-    y_employees.affected.n.minimum = V19,
-    x_reduced = V20,
-    x_open.hour = V21,
-    x_open.per.day = V22,
-    x_medium.soda = V23,
-    x_small.fries = V24,
-    x_entree = V25,
-    x_cash.reg = V26,
-    x_reg.11 = V27, 
-    x_type.sec.interview = V28, # second wave
-    x_status.sec.interview = V29,
-    x_date.sec = V30,
-    x_callbacks.sec = V31,
-    y_full.emp.sec = V32,
-    y_part.emp.sec = V33,
-    y_managers.sec = V34,
-    x_st.wage.after = V35,
-    x_months.raise.sec = V36,
-    x_amount.raise.sec = V37,
-    x_special.program.sec = V38,
-    x_reduced.price = V39,
-    x_open.hour.sec = V40,
-    x_open.per.day.sec = V41,
-    x_medium.soda.sec = V42,
-    x_small.fries.sec = V43,
-    x_entree.sec = V44,
-    x_cash.reg.sec = V45,
-    x_reg.11.sec = V46
+    x_id = V1, # ID of each restaurant
+    x_store.name = V2,  #chain 1=bk; 2=kfc; 3=roys; 4=wendys
+    x_co.owned = V3, # company owned (1) or not (0)
+    d_state = V4, # state: nj (1) or pa (0)
+    x_south.j = V5,# south nj (1) or not (0)
+    x_central.j = V6, # central nj (1) or not (0)
+    x_north.j = V7, # north nj (1) or not (0)
+    x_northeast.pa = V8, # northeast pa (1) or not (0)
+    x_easton.pa = V9, # easton pa (1) or not (0)
+    x_shore.j = V10, # shore nj (1) or not (0)
+    
+    # First Interview
+    x_callbacks.first = V11, # number of call backs (if contacted by first try = 0)
+    y_full.emp = V12, # number of full-time employees
+    y_part.emp = V13, # number of part-time employees
+    y_managers = V14, # number of managers 
+    x_st.wage.before = V15, # starting wage at time point t0 
+    x_months.raise = V16, # months to usual first raise
+    x_amount.raise = V17, # usual amount of first raise
+    x_cash.bounty = V18, # if there is cash bounty for new workers (1)
+    y_employees.affected.n.minimum = V19, # percentage of employees affected by new minimum
+    x_reduced = V20, # free/reduced price meals for employees
+    x_open.hour = V21, # hour of opening
+    x_open.per.day = V22, # amount of open hours per day
+    x_medium.soda = V23, # price of medium soda, including tax 
+    x_small.fries = V24, # price small fries, including tax
+    x_entree = V25, # price of entree, including tax 
+    x_cash.reg = V26, # number of cash registers in store
+    x_reg.11 = V27, # number of registers open at 11:00 am
+    
+    #Second interview
+    x_type.sec.interview = V28, # type of second interview: 1 = phone, 2 = personal
+    x_status.sec.interview = V29, # status of second interview (0 = refused second interview, 1 = answered 2nd interview, 2 = closed for renovations,3 = closed "permanently", 4 = closed for highway, 5 = closed due to Mall fire )
+    x_date.sec = V30, # date of the second interview
+    x_callbacks.sec = V31, # number of call-backs
+    y_full.emp.sec = V32, # number of full-time employees
+    y_part.emp.sec = V33, # number of part-time employees
+    y_managers.sec = V34, # number of managers 
+    x_st.wage.after = V35, # starting wage at time point t1
+    x_months.raise.sec = V36, # months to usual first raise
+    x_amount.raise.sec = V37, # usual amount of first raise
+    x_special.program.sec = V38, # special program for new workers (1)
+    x_reduced.price = V39, # free/reduced price meals for employees
+    x_open.hour.sec = V40, # hour of opening
+    x_open.per.day.sec = V41, # amount of open hours per day
+    x_medium.soda.sec = V42, # price of medium soda, including tax 
+    x_small.fries.sec = V43, # price small fries, including tax
+    x_entree.sec = V44, #price entree, including tax
+    x_cash.reg.sec = V45, # number of cash registers in store
+    x_reg.11.sec = V46 # number of registers open at 11:00 am
     )
 
 ```
 
-```{r Creating Variables, echo=FALSE}
+```{r Creating new variables, echo=FALSE}
 
 # Creating a new variable which says 1 if the restaurant was interviewed in the first wave
 df$x_interviewed.w1 <- (df$x_interviewed.w1 = 1)
 
-# creating new variables for each store (x_store.name) and state (d_state) into dummies. 
+# creating new variables for each store (x_store.name) and state (d_state) -> dummies. 
 
 # x_bk dummy variable for burger king (1) or not (0)
 df$x_bk <- gsub(2, 0, df$x_store.name) 
