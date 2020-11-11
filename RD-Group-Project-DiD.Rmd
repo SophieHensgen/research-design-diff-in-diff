@@ -169,8 +169,14 @@ df[,48:51] <- lapply(df[,48:51], as.integer)
 
 df[,53] <- lapply(df[,53], as.integer)
 
+# Creating a new variable for FTE --> full employment including managers and 0.5x part time employment
+
+df$y_fte.before <- df$y_full.emp + df$y_managers + df$y_part.emp*0.5
+df$y_fte.after <- df$y_part.emp.sec*0.5 + df$y_full.emp.sec + df$y_managers.sec 
 
 str(df)
+
+
 ```
 
 ```{r, echo=FALSE}
@@ -178,7 +184,7 @@ str(df)
 
 #subsetting the data frame
 df.select <- df %>%
-  select(x_co.owned, x_south.j, x_central.j, x_north.j, x_northeast.pa, x_easton.pa, x_st.wage.before, x_st.wage.after, x_open.per.day, x_open.per.day.sec, y_full.emp, y_full.emp.sec, d_state, x_store.name)
+  select(x_co.owned, x_south.j, x_central.j, x_north.j, x_northeast.pa, x_easton.pa, x_st.wage.before, x_st.wage.after, x_open.per.day, x_open.per.day.sec, y_fte.before, y_fte.after, d_state, x_store.name)
 
 #summary of the subset
 stargazer(data.frame(df.select), type = "text", summary = TRUE)
@@ -186,7 +192,7 @@ stargazer(data.frame(df.select), type = "text", summary = TRUE)
 ```
 ```{r replace . with na, echo=FALSE}
 
-  df <- df %>% replace_with_na(replace = list(y_full.emp = "." , x_st.wage.before = "." ,x_st.wage.after = ".", y_full.emp.sec = ".")) 
+  df <- df %>% replace_with_na(replace = list(y_fte.before = "." , x_st.wage.before = "." ,x_st.wage.after = ".", y_fte.after = ".")) 
 
 ```
 
@@ -325,28 +331,30 @@ p.after
 
 ## 1st row: MEANs and SEs across subgroups
   
-results.first <- df %>% 
+results.state.r1 <- df %>% 
             group_by(d_nj) %>% # group_by the treatment variable
-            dplyr::select(d_nj, y_full.emp) %>% # only keep variable of interest
+            dplyr::select(d_nj, y_fte.before) %>% # only keep variable of interest
             group_by(N = n(), .add = TRUE) %>% # count number of rows
             summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
             mutate(n = N - na_sum) %>% 
             mutate(se = sqrt(var/n))
 
 # Add row with differences
-  results.first <- bind_rows(results.first, results.first[2,]-results.first[1,])
-  results.first$group<- c("Control (Pennsylvania)", "Treatment (New Jersey)", "Difference")
-  kable(results.first, digits=2)
+  results.state.r1 <- bind_rows(results.state.r1, results.state.r1[2,]-results.state.r1[1,])
+  results.state.r1$group<- c("Control (Pennsylvania)", "Treatment (New Jersey)", "Difference")
+  kable(results.state.r1, digits=2)
 
 # Calculate SE for difference: SE = SQR(VAR/N + VAR/N)
-  diff_se <- sqrt(results.first$var[1]/results.first$n[1] + results.first$var[2]/results.first$n[2])
-  diff_se
+  diff_se.state.r1 <- sqrt(results.state.r1$var[1]/results.state.r1$n[1] + results.state.r1$var[2]/results.state.r1$n[2])
+  diff_se.state.r1
+  
+####################################################################################################
   
 ## 2nd row: MEANs and SEs across subgroups
   
-results.second <- df %>% 
+results.state.r2 <- df %>% 
             group_by(d_nj) %>% # group_by the treatment variable
-            dplyr::select(d_nj, y_full.emp.sec) %>% # only keep variable of interest - here dummy for state and employment for second time point (after treatment)
+            dplyr::select(d_nj, y_fte.after) %>% # only keep variable of interest - here dummy for state and employment for second time point (after treatment)
             group_by(N = n(), .add = TRUE) %>% # count number of rows
             summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
             mutate(n = N - na_sum) %>% 
@@ -354,19 +362,23 @@ results.second <- df %>%
 
    
 # Add row with differences
-  results.second <- bind_rows(results.second, results.second[2,]-results.second[1,])
-  results.second$group<- c("Control (Pennsylvania)", "Treatment (New Jersey)", "Difference")
-  kable(results.second, digits=2)
+  results.state.r2 <- bind_rows(results.state.r2, results.state.r2[2,]-results.state.r2[1,])
+  results.state.r2$group<- c("Control (Pennsylvania)", "Treatment (New Jersey)", "Difference")
+  kable(results.state.r2, digits=2)
+  
+####################################################################################################
   
 ## 3rd row: Change in MEANs and SEs between both time points
 
-  results.compare <- bind_rows(results.first, results.second)
-  results.compare <- select(results.compare, -8)
-  results.compare <- bind_rows(results.compare, results.compare[4,]-results.compare[1,])
-  results.compare <- bind_rows(results.compare, results.compare[5,]-results.compare[2,])
-  results.compare <- bind_rows(results.compare, results.compare[6,]-results.compare[3,])
-  results.compare$group<- c("Control (Pennsylvania)", "Treatment (New Jersey)", "Difference", "Control (Pennsylvania)", "Treatment (New Jersey)", "Difference", "Control (Pennsylvania)", "Treatment (New Jersey)", "Difference")
-  kable(results.compare, digits=2)  
+  results.state.r3 <- bind_rows(results.state.r1, results.state.r2)
+  results.state.r3 <- select(results.state.r3, -8)
+  results.state.r3 <- bind_rows(results.state.r3, results.state.r3[4,]-results.state.r3[1,])
+  results.state.r3 <- bind_rows(results.state.r3, results.state.r3[5,]-results.state.r3[2,])
+  results.state.r3 <- bind_rows(results.state.r3, results.state.r3[6,]-results.state.r3[3,])
+  results.state.r3$group<- c("Control (Pennsylvania)", "Treatment (New Jersey)", "Difference", "Control (Pennsylvania)", "Treatment (New Jersey)", "Difference", "Control (Pennsylvania)", "Treatment (New Jersey)", "Difference")
+  kable(results.state.r3, digits=2)  
+  
+####################################################################################################
   
 ## 4th row: Change in MEANs and SEs between both time points, balanced sample
   
@@ -379,22 +391,23 @@ results.second <- df %>%
 
 # Means time point 1
   
-results.balanced.first <- df.balanced %>% 
+resultsb.state.r4.before <- df.balanced %>% 
             group_by(d_nj) %>% # group_by the treatment variable
-            dplyr::select(d_nj, y_full.emp) %>% # only keep variable of interest
+            dplyr::select(d_nj, y_fte.before) %>% # only keep variable of interest
             group_by(N = n(), .add = TRUE) %>% # count number of rows
             summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
             mutate(n = N - na_sum) %>% 
             mutate(se = sqrt(var/n))
 
 # Add row with differences
-  results.balanced.first <- bind_rows(results.balanced.first, results.balanced.first[2,]-results.balanced.first[1,])
-  kable(results.balanced.first, digits=2)
+  resultsb.state.r4.before <- bind_rows(resultsb.state.r4.before, resultsb.state.r4.before[2,]-resultsb.state.r4.before[1,])
+  kable(resultsb.state.r4.before, digits=2)
 
 # Means time point 2
-results.balanced.second <- df.balanced %>% 
+  
+resultsb.state.r4.after <- df.balanced %>% 
             group_by(d_nj) %>% # group_by the treatment variable
-            dplyr::select(d_nj, y_full.emp.sec) %>% # only keep variable of interest 
+            dplyr::select(d_nj, y_fte.after) %>% # only keep variable of interest 
             group_by(N = n(), .add = TRUE) %>% # count number of rows
             summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
             mutate(n = N - na_sum) %>% 
@@ -402,45 +415,50 @@ results.balanced.second <- df.balanced %>%
 
    
 # Add row with differences
-  results.balanced.second <- bind_rows(results.balanced.second, results.balanced.second[2,]-results.balanced.second[1,])
-  results.balanced.second$group<- c("Control (Pennsylvania)", "Treatment (New Jersey)", "Difference")
-  kable(results.balanced.second, digits=2)
+  resultsb.state.r4.after <- bind_rows(resultsb.state.r4.after, resultsb.state.r4.after[2,]-resultsb.state.r4.after[1,])
+  resultsb.state.r4.after$group<- c("Control (Pennsylvania)", "Treatment (New Jersey)", "Difference")
+  kable(resultsb.state.r4.after, digits=2)
   
 # Mean Differences 
   
-results.balanced.compare <- bind_rows(results.balanced.first, results.balanced.second)
-  results.balanced.compare <- select(results.balanced.compare, -8)
-  results.balanced.compare <- bind_rows(results.balanced.compare, results.balanced.compare[4,]-results.balanced.compare[1,])
-  results.balanced.compare <- bind_rows(results.balanced.compare, results.balanced.compare[5,]-results.balanced.compare[2,])
-  results.balanced.compare <- bind_rows(results.balanced.compare, results.balanced.compare[6,]-results.balanced.compare[3,])
-  results.balanced.compare$group<- c("Control (Pennsylvania)", "Treatment (New Jersey)", "Difference", "Control (Pennsylvania)", "Treatment (New Jersey)", "Difference", "Control (Pennsylvania)", "Treatment (New Jersey)", "Difference")
-  kable(results.balanced.compare, digits=2)  
+resultsb.state.r4 <- bind_rows(resultsb.state.r4.before, resultsb.state.r4.after)
+  resultsb.state.r4 <- select(resultsb.state.r4, -8)
+  resultsb.state.r4 <- bind_rows(resultsb.state.r4, resultsb.state.r4[4,]-resultsb.state.r4[1,])
+  resultsb.state.r4 <- bind_rows(resultsb.state.r4, resultsb.state.r4[5,]-resultsb.state.r4[2,])
+  resultsb.state.r4 <- bind_rows(resultsb.state.r4, resultsb.state.r4[6,]-resultsb.state.r4[3,])
+  resultsb.state.r4$group<- c("Control (Pennsylvania)", "Treatment (New Jersey)", "Difference", "Control (Pennsylvania)", "Treatment (New Jersey)", "Difference", "Control (Pennsylvania)", "Treatment (New Jersey)", "Difference")
+  kable(resultsb.state.r4, digits=2)  
   
+####################################################################################################
   
 ## 5th row: Change in MEANs and SEs between both time points, permanently closed set to 0
   
 # Create a new variable where permanently closed stores have a FTE of 0
-df$y_full.emp.sec.closed <- df$y_full.emp.sec
-df$y_full.emp.sec.closed[df$x_status.sec.interview == 3] <- 0
+df$y_fte.after.closed <- df$y_fte.after
+df$y_fte.after.closed[df$x_status.sec.interview == 3] <- 0
     
 # Filter complete cases across all columns
 df.closed <- df %>% filter(complete.cases(.)) 
     
-results.closed.first <- df.closed %>% 
+# Before Treatment
+
+resultsc.state.r5.before <- df.closed %>% 
             group_by(d_nj) %>% # group_by the treatment variable
-            dplyr::select(d_nj, y_full.emp) %>% # only keep variable of interest
+            dplyr::select(d_nj, y_fte.before) %>% # only keep variable of interest
             group_by(N = n(), .add = TRUE) %>% # count number of rows
             summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
             mutate(n = N - na_sum) %>% 
             mutate(se = sqrt(var/n))
 
 # Add row with differences
-  results.closed.first <- bind_rows(results.closed.first, results.closed.first[2,]-results.closed.first[1,])
-  kable(results.closed.first, digits=2)
+  resultsc.state.r5.before <- bind_rows(resultsc.state.r5.before, resultsc.state.r5.before[2,]-resultsc.state.r5.before[1,])
+  kable(resultsc.state.r5.before, digits=2)
 
-results.closed.second <- df.closed %>% 
+# After Treatment
+  
+resultsc.state.r5.after <- df.closed %>% 
             group_by(d_nj) %>% # group_by the treatment variable
-            dplyr::select(d_nj, y_full.emp.sec.closed) %>% # only keep variable of interest 
+            dplyr::select(d_nj, y_fte.after.closed) %>% # only keep variable of interest 
             group_by(N = n(), .add = TRUE) %>% # count number of rows
             summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
             mutate(n = N - na_sum) %>% 
@@ -448,16 +466,17 @@ results.closed.second <- df.closed %>%
 
    
 # Add row with differences
-  results.closed.second <- bind_rows(results.closed.second, results.closed.second[2,]-results.closed.second[1,])
-  kable(results.closed.second, digits=2)
+  resultsc.state.r5.after <- bind_rows(resultsc.state.r5.after, resultsc.state.r5.after[2,]-resultsc.state.r5.after[1,])
+  kable(resultsc.state.r5.after, digits=2)
   
-results.closed.compare <- bind_rows(results.first, results.second)
-  results.closed.compare <- select(results.closed.compare, -8)
-  results.closed.compare <- bind_rows(results.closed.compare, results.closed.compare[4,]-results.closed.compare[1,])
-  results.closed.compare <- bind_rows(results.closed.compare, results.closed.compare[5,]-results.closed.compare[2,])
-  results.closed.compare <- bind_rows(results.closed.compare, results.closed.compare[6,]-results.closed.compare[3,])
-  results.closed.compare$group<- c("Control (Pennsylvania)", "Treatment (New Jersey)", "Difference", "Control (Pennsylvania)", "Treatment (New Jersey)", "Difference", "Control (Pennsylvania)", "Treatment (New Jersey)", "Difference")
-  kable(results.closed.compare, digits=2)    
+# Compare all the results and add the difference between them. 
+  
+resultsc.state.r5 <- bind_rows(resultsc.state.r5.before, resultsc.state.r5.after)
+  resultsc.state.r5 <- bind_rows(resultsc.state.r5, resultsc.state.r5[4,]-resultsc.state.r5[1,])
+  resultsc.state.r5 <- bind_rows(resultsc.state.r5, resultsc.state.r5[5,]-resultsc.state.r5[2,])
+  resultsc.state.r5 <- bind_rows(resultsc.state.r5, resultsc.state.r5[6,]-resultsc.state.r5[3,])
+  resultsc.state.r5$group<- c("Control (Pennsylvania)", "Treatment (New Jersey)", "Difference", "Control (Pennsylvania)", "Treatment (New Jersey)", "Difference", "Control (Pennsylvania)", "Treatment (New Jersey)", "Difference")
+  kable(resultsc.state.r5, digits=2)    
 
   
 ```
@@ -475,33 +494,33 @@ results.closed.compare <- bind_rows(results.first, results.second)
 results.r1.c4 <- df %>%
   group_by(d_nj) %>%
   filter(d_nj == 1 & x_st.wage.before == 4.25) %>%
-  dplyr::select(y_full.emp) %>%
+  dplyr::select(y_fte.before) %>%
   group_by(N = n()) %>%
   summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
-  mutate(n = N - y_full.emp_na_sum) %>% 
-  mutate(se = sqrt(y_full.emp_var/n))
+  mutate(n = N - y_fte.before_na_sum) %>% 
+  mutate(se = sqrt(y_fte.before_var/n))
 
 # Column 5
 
 results.r1.c5 <- df %>%
   group_by(d_nj) %>%
   filter(x_st.wage.before > 4.25 & x_st.wage.before < 5 & d_nj == 1) %>%
-  dplyr::select(y_full.emp) %>%
+  dplyr::select(y_fte.before) %>%
   group_by(N = n()) %>%
   summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
-  mutate(n = N - y_full.emp_na_sum) %>% 
-  mutate(se = sqrt(y_full.emp_var/n))
+  mutate(n = N - y_fte.before_na_sum) %>% 
+  mutate(se = sqrt(y_fte.before_var/n))
 
 # Column 6
 
 results.r1.c6 <- df %>%
   group_by(d_nj) %>%
   filter(x_st.wage.before > 4.99 & d_nj == 1) %>%
-  dplyr::select(y_full.emp) %>%
+  dplyr::select(y_fte.before) %>%
   group_by(N = n()) %>%
   summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
-  mutate(n = N - y_full.emp_na_sum) %>% 
-  mutate(se = sqrt(y_full.emp_var/n))
+  mutate(n = N - y_fte.before_na_sum) %>% 
+  mutate(se = sqrt(y_fte.before_var/n))
 
 # Combining all the results for row 1
 
@@ -517,11 +536,11 @@ kable(results.compare.r1, digits=2)
 results.r2.c4 <- df %>%
   group_by(d_nj) %>%
   filter(d_nj == 1 & x_st.wage.before == 4.25) %>%
-  dplyr::select(y_full.emp.sec) %>%
+  dplyr::select(y_fte.after) %>%
   group_by(N = n()) %>%
   summarize_all(funs(mean = mean, var = var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
-  mutate(n = N - y_full.emp.sec_na_sum) %>% 
-  mutate(se = sqrt(y_full.emp.sec_var/n))
+  mutate(n = N - y_fte.after_na_sum) %>% 
+  mutate(se = sqrt(y_fte.after_var/n))
 
 # Column 5 
 #something is wrong here
@@ -529,11 +548,11 @@ results.r2.c4 <- df %>%
 results.r2.c5 <- df %>%
   group_by(d_nj) %>%
   filter(x_st.wage.before > 4.25 & x_st.wage.before < 5 & d_nj == 1) %>%
-  dplyr::select(y_full.emp.sec) %>%
+  dplyr::select(y_fte.after) %>%
   group_by(N = n()) %>%
   summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
-  mutate(n = N - y_full.emp.sec_na_sum) %>% 
-  mutate(se = sqrt(y_full.emp.sec_var/n))
+  mutate(n = N - y_fte.after_na_sum) %>% 
+  mutate(se = sqrt(y_fte.after_var/n))
 
 # Column 6
 #something is wrong here
@@ -541,11 +560,11 @@ results.r2.c5 <- df %>%
 results.r2.c6 <- df %>%
   group_by(d_nj) %>%
   filter(x_st.wage.before > 4.99 & d_nj == 1) %>%
-  dplyr::select(y_full.emp.sec) %>%
+  dplyr::select(y_fte.after) %>%
   group_by(N = n()) %>%
   summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
-  mutate(n = N - y_full.emp.sec_na_sum) %>% 
-  mutate(se = sqrt(y_full.emp.sec_var/n))
+  mutate(n = N - y_fte.after_na_sum) %>% 
+  mutate(se = sqrt(y_fte.after_var/n))
 
 # Combining all the results for row 1
 
@@ -577,33 +596,33 @@ results.compare.r3 <- bind_rows(results.compare.r2, results.compare.r1)
   resultsb.r1.c4 <- df.balanced %>%
   group_by(d_nj) %>%
   filter(d_nj == 1 & x_st.wage.before == 4.25) %>%
-  dplyr::select(y_full.emp) %>%
+  dplyr::select(y_fte.before) %>%
   group_by(N = n()) %>%
   summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
-  mutate(n = N - y_full.emp_na_sum) %>% 
-  mutate(se = sqrt(y_full.emp_var/n))
+  mutate(n = N - y_fte.before_na_sum) %>% 
+  mutate(se = sqrt(y_fte.before_var/n))
 
 # Column 5
 
 resultsb.r1.c5 <- df.balanced %>%
   group_by(d_nj) %>%
   filter(x_st.wage.before > 4.25 & x_st.wage.before < 5 & d_nj == 1) %>%
-  dplyr::select(y_full.emp) %>%
+  dplyr::select(y_fte.before) %>%
   group_by(N = n()) %>%
   summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
-  mutate(n = N - y_full.emp_na_sum) %>% 
-  mutate(se = sqrt(y_full.emp_var/n))
+  mutate(n = N - y_fte.before_na_sum) %>% 
+  mutate(se = sqrt(y_fte.before_var/n))
 
 # Column 6
 
 resultsb.r1.c6 <- df.balanced %>%
   group_by(d_nj) %>%
   filter(x_st.wage.before >= 5 & d_nj == 1) %>%
-  dplyr::select(y_full.emp) %>%
+  dplyr::select(y_fte.before) %>%
   group_by(N = n()) %>%
   summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
-  mutate(n = N - y_full.emp_na_sum) %>% 
-  mutate(se = sqrt(y_full.emp_var/n))
+  mutate(n = N - y_fte.before_na_sum) %>% 
+  mutate(se = sqrt(y_fte.before_var/n))
 
 # Combining all the results for row 1
 
@@ -618,11 +637,11 @@ kable(resultsb.compare.r1, digits=2)
 resultsb.r2.c4 <- df.balanced %>%
   group_by(d_nj) %>%
   filter(d_nj == 1 & x_st.wage.before == 4.25) %>%
-  dplyr::select(y_full.emp.sec) %>%
+  dplyr::select(y_fte.after) %>%
   group_by(N = n()) %>%
   summarize_all(funs(mean = mean, var = var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
-  mutate(n = N - y_full.emp.sec_na_sum) %>% 
-  mutate(se = sqrt(y_full.emp.sec_var/n))
+  mutate(n = N - y_fte.after_na_sum) %>% 
+  mutate(se = sqrt(y_fte.after_var/n))
 
 # Column 5 
 #something is wrong here
@@ -630,11 +649,11 @@ resultsb.r2.c4 <- df.balanced %>%
 resultsb.r2.c5 <- df.balanced %>%
   group_by(d_nj) %>%
   filter(x_st.wage.before > 4.25 & x_st.wage.before < 5 & d_nj == 1) %>%
-  dplyr::select(y_full.emp.sec) %>%
+  dplyr::select(y_fte.after) %>%
   group_by(N = n()) %>%
   summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
-  mutate(n = N - y_full.emp.sec_na_sum) %>% 
-  mutate(se = sqrt(y_full.emp.sec_var/n))
+  mutate(n = N - y_fte.after_na_sum) %>% 
+  mutate(se = sqrt(y_fte.after_var/n))
 
 # Column 6
 #something is wrong here
@@ -642,11 +661,11 @@ resultsb.r2.c5 <- df.balanced %>%
 resultsb.r2.c6 <- df.balanced %>%
   group_by(d_nj) %>%
   filter(x_st.wage.before > 4.99 & d_nj == 1) %>%
-  dplyr::select(y_full.emp.sec) %>%
+  dplyr::select(y_fte.after) %>%
   group_by(N = n()) %>%
   summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
-  mutate(n = N - y_full.emp.sec_na_sum) %>% 
-  mutate(se = sqrt(y_full.emp.sec_var/n))
+  mutate(n = N - y_fte.after_na_sum) %>% 
+  mutate(se = sqrt(y_fte.after_var/n))
 
 # Combining all the results for row 1
 
@@ -668,8 +687,8 @@ results.compare.r4 <- bind_rows(resultsb.compare.r2, resultsb.compare.r1)
 # 5th Rows: Permanantely closed = 0
   
 # Create a new variable where permanently closed stores have a FTE of 0
-df$y_full.emp.sec.closed <- df$y_full.emp.sec
-df$y_full.emp.sec.closed[df$x_status.sec.interview == 3] <- 0
+df$y_fte.after.closed <- df$y_fte.after
+df$y_fte.after.closed[df$x_status.sec.interview == 3] <- 0
     
 # Filter complete cases across all columns
 df.closed <- df %>% filter(complete.cases(.))
@@ -680,33 +699,33 @@ df.closed <- df %>% filter(complete.cases(.))
   resultsc.r1.c4 <- df.closed %>%
   group_by(d_nj) %>%
   filter(d_nj == 1 & x_st.wage.before == 4.25) %>%
-  dplyr::select(y_full.emp) %>%
+  dplyr::select(y_fte.before) %>%
   group_by(N = n()) %>%
   summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
-  mutate(n = N - y_full.emp_na_sum) %>% 
-  mutate(se = sqrt(y_full.emp_var/n))
+  mutate(n = N - y_fte.before_na_sum) %>% 
+  mutate(se = sqrt(y_fte.before_var/n))
 
 # Column 5
 
 resultsc.r1.c5 <- df.closed %>%
   group_by(d_nj) %>%
   filter(x_st.wage.before > 4.25 & x_st.wage.before < 5 & d_nj == 1) %>%
-  dplyr::select(y_full.emp) %>%
+  dplyr::select(y_fte.before) %>%
   group_by(N = n()) %>%
   summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
-  mutate(n = N - y_full.emp_na_sum) %>% 
-  mutate(se = sqrt(y_full.emp_var/n))
+  mutate(n = N - y_fte.before_na_sum) %>% 
+  mutate(se = sqrt(y_fte.before_var/n))
 
 # Column 6
 
 resultsc.r1.c6 <- df.closed %>%
   group_by(d_nj) %>%
   filter(x_st.wage.before >= 5 & d_nj == 1) %>%
-  dplyr::select(y_full.emp) %>%
+  dplyr::select(y_fte.before) %>%
   group_by(N = n()) %>%
   summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
-  mutate(n = N - y_full.emp_na_sum) %>% 
-  mutate(se = sqrt(y_full.emp_var/n))
+  mutate(n = N - y_fte.before_na_sum) %>% 
+  mutate(se = sqrt(y_fte.before_var/n))
 
 # Combining all the results for row 1
 
@@ -720,33 +739,33 @@ kable(resultsc.compare.r1, digits=2)
 resultsc.r2.c4 <- df.closed %>%
   group_by(d_nj) %>%
   filter(d_nj == 1 & x_st.wage.before == 4.25) %>%
-  dplyr::select(y_full.emp.sec) %>%
+  dplyr::select(y_fte.after) %>%
   group_by(N = n()) %>%
   summarize_all(funs(mean = mean, var = var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
-  mutate(n = N - y_full.emp.sec_na_sum) %>% 
-  mutate(se = sqrt(y_full.emp.sec_var/n))
+  mutate(n = N - y_fte.after_na_sum) %>% 
+  mutate(se = sqrt(y_fte.after_var/n))
 
 # Column 5 
 
 resultsc.r2.c5 <- df.closed %>%
   group_by(d_nj) %>%
   filter(x_st.wage.before > 4.25 & x_st.wage.before < 5 & d_nj == 1) %>%
-  dplyr::select(y_full.emp.sec) %>%
+  dplyr::select(y_fte.after) %>%
   group_by(N = n()) %>%
   summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
-  mutate(n = N - y_full.emp.sec_na_sum) %>% 
-  mutate(se = sqrt(y_full.emp.sec_var/n))
+  mutate(n = N - y_fte.after_na_sum) %>% 
+  mutate(se = sqrt(y_fte.after_var/n))
 
 # Column 6
 
 resultsc.r2.c6 <- df.closed %>%
   group_by(d_nj) %>%
   filter(x_st.wage.before > 4.99 & d_nj == 1) %>%
-  dplyr::select(y_full.emp.sec) %>%
+  dplyr::select(y_fte.after) %>%
   group_by(N = n()) %>%
   summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
-  mutate(n = N - y_full.emp.sec_na_sum) %>% 
-  mutate(se = sqrt(y_full.emp.sec_var/n))
+  mutate(n = N - y_fte.after_na_sum) %>% 
+  mutate(se = sqrt(y_fte.after_var/n))
 
 # Combining all the results for row 1
 
@@ -818,8 +837,8 @@ kable(results.low.r5, digits=2)
 #First select you data set, with which you want to work
 
  df2 <- dplyr::select(df, 
-                         y_full.emp,
-                         y_full.emp.sec,
+                         y_fte.before,
+                         y_fte.after,
                          d_nj,
                          x_bk,
                          x_kfc,
@@ -839,12 +858,12 @@ kable(results.low.r5, digits=2)
 
 # Model (i)/Column 1: Base
 
-  fit.c1 <- lm((y_full.emp.sec-y_full.emp) ~ d_nj,
+  fit.c1 <- lm((y_fte.after-y_fte.before) ~ d_nj,
              data = df2)
   summary(fit.c1)
 
 # Model (ii)/Column 2: Controls Chain/Ownership
-  fit.c2 <- lm((y_full.emp.sec-y_full.emp) ~ 
+  fit.c2 <- lm((y_fte.after-y_fte.before) ~ 
                d_nj + x_bk + x_kfc + x_roys + x_co.owned, 
              data = df2)
   summary(fit.c2)
@@ -858,21 +877,21 @@ kable(results.low.r5, digits=2)
   
 # then linear model/regression
   
-  fit.c3 <- lm((y_full.emp.sec-y_full.emp) ~ 
+  fit.c3 <- lm((y_fte.after-y_fte.before) ~ 
                d_ini.wage.gap, 
              data = df2)
   summary(fit.c3)
 
 # Model (iv)/Column 4: Initial Wage gap - Controls Chain/Ownership
   
-  fit.c4 <- lm((y_full.emp.sec-y_full.emp) ~ 
+  fit.c4 <- lm((y_fte.after-y_fte.before) ~ 
                d_ini.wage.gap + x_bk + x_kfc + x_roys + x_co.owned, 
              data = df2)
   summary(fit.c4)  
   
 # Model (iv)/Column 4: Initial Wage gap - Controls Chain/Ownership + Regions 
   
-  fit.c5 <- lm((y_full.emp.sec-y_full.emp) ~ 
+  fit.c5 <- lm((y_fte.after-y_fte.before) ~ 
                d_ini.wage.gap + x_bk + x_kfc + x_roys + x_co.owned + x_south.j + x_central.j + x_northeast.pa + x_easton.pa, 
              data = df2)
   summary(fit.c5)  
