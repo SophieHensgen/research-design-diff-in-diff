@@ -14,6 +14,7 @@ library(stargazer)
 library(plotly)
 library(kableExtra)
 library(naniar)
+library(janitor)
 ```
 
 ## Load Data Set
@@ -154,7 +155,7 @@ df$d_pa <- gsub(2, 1, df$d_pa)
 df[,12:14] <- lapply(df[,12:14], as.factor) #first convert into factor, and then into numeric. if tried to convert directly from character into numeric an error will appear.
 df[,12:14] <- lapply(df[,12:14], as.numeric)
 
-df[,15] <- lapply(df[,15], as.numeric)
+df[,15] <- lapply(df[,15], as.numeric) # sometimes it is better to convert directly as it can affect the values
 
 df[,16:17] <- lapply(df[,16:17], as.factor) 
 df[,16:17] <- lapply(df[,16:17], as.numeric)
@@ -178,79 +179,189 @@ df[,48:51] <- lapply(df[,48:51], as.integer)
 
 df[,53] <- lapply(df[,53], as.integer)
 
-# Creating a new variable for FTE --> full employment including managers and 0.5x part time employment
+# looking ta the structure of the variables - Check if convertion worked
+str(df)
+
+```
+
+```{r creating new FTE variable , echo=FALSE}
+
+# Creating a new variable for FTE --> full-time employees including managers and 0.5x part-time employees
 
 df$y_fte.before <- df$y_full.emp + df$y_managers + df$y_part.emp*0.5
 df$y_fte.after <- df$y_part.emp.sec*0.5 + df$y_full.emp.sec + df$y_managers.sec 
-
-str(df)
 
 
 ```
 
 ```{r, echo=FALSE}
+
 #Summary Statistic of a subset of the data frame df
 
 #subsetting the data frame
-df.select <- df %>%
-  select(x_co.owned, x_south.j, x_central.j, x_north.j, x_northeast.pa, x_easton.pa, x_st.wage.before, x_st.wage.after, x_open.per.day, x_open.per.day.sec, y_fte.before, y_fte.after, d_state, x_store.name)
 
-#summary of the subset
+df.select <- df %>%
+  select(x_co.owned, 
+         x_south.j, 
+         x_central.j, 
+         x_north.j, 
+         x_northeast.pa, 
+         x_easton.pa, 
+         x_st.wage.before, 
+         x_st.wage.after, 
+         x_open.per.day, 
+         x_open.per.day.sec, 
+         y_fte.before, 
+         y_fte.after, 
+         d_state, 
+         x_store.name)
+
+#summary of the subset df.select
+
 stargazer(data.frame(df.select), type = "text", summary = TRUE)
 
 ```
 ```{r replace . with na, echo=FALSE}
+
+# Replace all . with NA, as there is no observed value
 
   df <- df %>% replace_with_na(replace = list(y_fte.before = "." , x_st.wage.before = "." ,x_st.wage.after = ".", y_fte.after = ".")) 
 
 ```
 
 
-```{r Table 1 - Sample Size and response rate, echo=FALSE}
+```{r Table 1 (Wave 1) - Sample Size and response rate, echo=FALSE}
 
-# first wave
-# d_state
+### Wave 1 - February 15 - March 4 1992
 
-# count number interviewed
-count.all.w1 <- df %>% 
+# 3rd Row: Number Interviewed
+
+count.w1.r3.c1 <- nrow(df) # count of all interviewed
+
+count.w1.r3.c23 <- df %>%  #for nj and pa respectively 
   count(d_state)
 
-count.all.w1
+count.w1.r3.c23$states <- c("NJ", "PA") # add variable of labels
+count.w1.r3 <- count.w1.r3.c23%>% add_row(d_state = NA, n = count.w1.r3.c1, states = "all") # add new row: total interviewed
+count.w1.r3 <- select(count.w1.r3, -1) # delete status variable
+count.w1.r3 <- count.w1.r3[c(2,1)] # change order of columns
+count.w1.r3 <- as.data.frame(t(count.w1.r3)) # change rows to columns and columns to rows
+count.w1.r3 <- count.w1.r3 %>% # first row as names of columns
+  row_to_names(row_number = 1)
 
-# response rate nj
-count.all.per <- df %>%
+# 4th Row: Response Rate 
+
+count.w1.r4.c1 <- df %>% # response rate all
   tally(x_interviewed.w1)%>%
   mutate(percent = n/473)
 
-# response rate nj
-count.nj.per <- df %>%
+count.w1.r4.c2 <- df %>% # response rate nj
   count(d_state) %>%
   filter(d_state == 1) %>%
   mutate(percent = n/364)
 
-# response rate pa
-count.pa.per <- df %>%
+count.w1.r4.c3 <- df %>% # response rate pa
   count(d_state) %>%
   filter(d_state == 0) %>%
   mutate(percent = n/109)
 
-# second wave
-# x_status.sec.interview, d_state
+count.w1.r4 <- full_join(count.w1.r4.c1, count.w1.r4.c2) # combine data frames from before
+count.w1.r4 <- full_join(count.w1.r4, count.w1.r4.c3)
 
-count.all.w2 <- df %>% 
-  count(x_status.sec.interview)
+count.w1.r4$states <- c("All", "NJ", "PA") # add variable with labels
 
-count.nj <- df %>% 
+count.w1.r4 <- select(count.w1.r4, -3) # delete status variable
+count.w1.r4 <- count.w1.r4[c(3,1,2)] # change order of columns
+count.w1.r4 <- as.data.frame(t(count.w1.r4)) # change rows to columns and columns to rows
+count.w1.r4 <- count.w1.r4 %>% # first row as names of columns
+  row_to_names(row_number = 1)
+
+count.w1.r4[,1:3] <- lapply(count.w1.r4[,1:3], as.numeric) #change form character to numeric
+
+count.w1.r4[1,] <- format(round(count.w1.r4[1,], 0), nsmall = 0) # decimal points for row 1
+
+count.w1.r4[,1:3] <- lapply(count.w1.r4[,1:3], as.numeric) #change form character to numeric, again, as it changed due to the comment before
+
+count.w1.r4[2,] <- format(round(count.w1.r4[2,], 2), nsmall = 2) # decimal points for row 2
+
+count.w1.r4[,1:3] <- lapply(count.w1.r4[,1:3], as.numeric) 
+
+
+# 1st Row: Number of stores in the sample:
+# drawn from the text (cannot be seen in the data set): 
+# - 473 (all), 364 (nj), 109 (pa)
+
+count.w1 <- count.w1.r4 %>% add_row(All = 473, NJ = 364, PA = 109) # add row - first row by hand
+
+# 2nd Row: Number of refusals:
+# drawn from the text (cannot be seen in the data set): 
+# - 63 (all), 33 (nj), 30 (pa)
+
+count.w1 <- count.w1%>% add_row(All = 63, NJ = 33, PA = 30) # add row - second row by hand
+
+
+```
+
+```{r Table 1 (Wave 2) - Sample Size and response rate, echo=FALSE}
+
+
+## Wave 2 - November 5 - December 31 1992
+
+# Row 6th: Number of stores in sample
+
+count.w1.r3.c1 <- nrow(df) # count of all stores in the sample of the second wave
+
+count.w1.r3.c23 <- df %>%  #for nj and pa respectively 
+  count(d_state)
+
+# Column 1: for rows 6 - 10
+
+# 0 = refused second interview (count = 1)
+# 1 = answered 2nd interview (count = 399)
+# 2 = closed for renovations (count = 2)
+# 3 = closed "permanently" (count = 6)
+# 4 = closed for highway construction (count = 1)
+# 5 = closed due to Mall fire (count = 1)
+
+count.w2.c1 <- df %>% 
+  count(x_status.sec.interview) 
+
+colnames(count.w2.c1) <- c("Status", "All")
+
+count.w2.c1$group<- c("Refused", "Answered", "Renovations", "Closed Permanently", "Construction", "Mall fire") # add new variable with labels
+
+
+# Column 2: for rows 6 - 10
+
+count.w2.c2 <- df %>% 
   filter(d_state == 1) %>% # NJ
   count(x_status.sec.interview)
 
-count.pa <- df %>% 
+colnames(count.w2.c2) <- c("Status", "NJ")
+
+count.w2.c2$group<- c("Refused", "Answered", "Renovations", "Closed Permanently", "Construction", "Mall fire") # add new variable with labels
+
+# Column 3: for rows 6 - 10
+
+count.w2.c3 <- df %>% 
   filter(d_state == 0) %>% # PA
   count(x_status.sec.interview)
 
-count.all.w2
-count.nj
-count.pa
+colnames(count.w2.c3) <- c("Status", "PA")
+
+count.w2.c3$group<- c("Answered", "Closed Permanently") # add new variable with labels
+
+# Column 1 - 3 & columns 5 - 10
+
+count.w2 <- full_join(count.w2.c1, count.w2.c2) # joining the individual df
+count.w2 <- full_join(count.w2, count.w2.c3)
+ 
+count.w2[is.na(count.w2)] <- 0 # all nas in 0
+count.w2 <- select(count.w2, -1) # delete status variable
+count.w2 <- count.w2[c(2,1,3,4)] # change column order
+count.w2 %>% add_row(group = "Sample", All = 410, NJ = 331, PA = 79) #add row with total in sample
+
+count.w2 # final wave 2 df
 
 ```
 
