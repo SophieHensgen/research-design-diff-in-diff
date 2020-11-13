@@ -188,8 +188,23 @@ str(df)
 
 # Creating a new variable for FTE --> full-time employees including managers and 0.5x part-time employees
 
-df$y_fte.before <- df$y_full.emp + df$y_managers + df$y_part.emp*0.5
-df$y_fte.after <- df$y_part.emp.sec*0.5 + df$y_full.emp.sec + df$y_managers.sec 
+#df$y_fte.before1 <- df$y_full.emp + df$y_managers + df$y_part.emp*0.5
+#df$y_fte.after <- df$y_part.emp.sec*0.5 + df$y_full.emp.sec + df$y_managers.sec 
+
+# FTE before
+for(i in 1:nrow(df)){
+  df$y_fte.before[i] <- df$y_full.emp[i] + # Full-time employees
+    0.5*(df$y_part.emp[i]) + # plus part-time employees counted as 0.5
+    df$y_managers[i] # plus number of managers
+}
+
+
+# FTE after
+for(i in 1:nrow(df)){
+  df$y_fte.after[i] <- df$y_full.emp.sec[i] +
+    0.5*(df$y_part.emp.sec[i]) +
+    df$y_managers.sec[i]
+}
 
 
 ```
