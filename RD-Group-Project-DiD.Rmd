@@ -152,34 +152,24 @@ df$d_pa <- gsub(2, 1, df$d_pa)
 
 # Some variables are character vectors, which cannot be used in a summary. Therefore they have to be changed. 
 
-df[,12:14] <- lapply(df[,12:14], as.factor) #first convert into factor, and then into numeric. if tried to convert directly from 
-df[,12:14] <- lapply(df[,12:14], as.numeric) #character into numeric an error will appear.
+# converting into numeric
 
-df[,15] <- lapply(df[,15], as.numeric) # sometimes it is better to convert directly as it can affect the values
+df[,12:17] <- lapply(df[,12:17], as.numeric) #. will be NAs from now on
 
-df[,16:17] <- lapply(df[,16:17], as.factor) 
-df[,16:17] <- lapply(df[,16:17], as.numeric)
-
-df[,19] <- lapply(df[,19], as.factor)
 df[,19] <- lapply(df[,19], as.numeric)
 
-df[,23:27] <- lapply(df[,23:27], as.factor)
 df[,23:27] <- lapply(df[,23:27], as.numeric)
 
-df[,31:34] <- lapply(df[,31:34], as.factor)
-df[,31:34] <- lapply(df[,31:34], as.numeric)
+df[,31:46] <- lapply(df[,31:46], as.numeric)
 
-df[,35] <- lapply(df[,35], as.numeric)
 
-df[,36:46] <- lapply(df[,36:46], as.factor)
-df[,36:46] <- lapply(df[,36:46], as.numeric)
+# convert into integer as it is a dummy variable with only 0 and 1, here convert directly to integer as the numbers would change if you first convert into factor
 
-#convert into integer as it is a dummy variable with only 0 and 1, here convert directly to integer as the numbers would change if you first convert into factor
 df[,48:51] <- lapply(df[,48:51], as.integer)
 
 df[,53] <- lapply(df[,53], as.integer)
 
-# looking ta the structure of the variables - Check if convertion worked
+# looking ta the structure of the variables - Check if conversion worked
 str(df)
 
 ```
@@ -188,7 +178,7 @@ str(df)
 
 # Creating a new variable for FTE --> full-time employees including managers and 0.5x part-time employees
 
-#df$y_fte.before1 <- df$y_full.emp + df$y_managers + df$y_part.emp*0.5
+#df$y_fte.before <- df$y_full.emp + df$y_managers + df$y_part.emp*0.5
 #df$y_fte.after <- df$y_part.emp.sec*0.5 + df$y_full.emp.sec + df$y_managers.sec 
 
 # FTE before
@@ -236,13 +226,7 @@ df.select <- df %>%
 stargazer(data.frame(df.select), type = "text", summary = TRUE)
 
 ```
-```{r replace . with na, echo=FALSE}
 
-# Replace all . with NA, as there is no observed value
-
-  df <- df %>% replace_with_na(replace = list(y_fte.before = "." , x_st.wage.before = "." ,x_st.wage.after = ".", y_fte.after = ".")) 
-
-```
 
 
 ```{r Table 1 (Wave 1) - Sample Size and response rate, echo=FALSE}
@@ -324,7 +308,7 @@ count.w1 <- count.w1%>% add_row(All = 63, NJ = 33, PA = 30) # add row - second r
 
 ## Final Layout
 
-count.w1$wave2 <- c("Number Interview", "Number of refusals", "Number of Stores in Sample Frame","Response Rate (percentage)") # add variable with labels
+count.w1$wave1 <- c("Number Interview", "Number of refusals", "Number of Stores in Sample Frame","Response Rate (percentage)") # add variable with labels
 
 count.w1 <- count.w1[c(3, 4, 1, 2),] # change the order of rows
 count.w1 <- count.w1[,c(4, 1, 2, 3)] # change the order of columns
@@ -361,7 +345,7 @@ count.w2.c1 <- df %>%
 
 # Changing layout
 colnames(count.w2.c1) <- c("Status", "All") # Change column names
-count.w2.c1$group<- c("Refused", "Answered", "Renovations", "Closed Permanently", "Construction", "Mall fire") # add new variable with labels
+count.w2.c1$wave2<- c("Refused", "Answered", "Renovations", "Closed Permanently", "Construction", "Mall fire") # add new variable with labels
 
 ###################################################################################################
 
@@ -374,7 +358,7 @@ count.w2.c2 <- df %>%
 
 # Changing layout
 colnames(count.w2.c2) <- c("Status", "NJ") # Changing column names
-count.w2.c2$group<- c("Refused", "Answered", "Renovations", "Closed Permanently", "Construction", "Mall fire") # add new variable with labels
+count.w2.c2$wave2<- c("Refused", "Answered", "Renovations", "Closed Permanently", "Construction", "Mall fire") # add new variable with labels
 
 ###################################################################################################
 
@@ -387,7 +371,7 @@ count.w2.c3 <- df %>%
 
 # Changing layout
 colnames(count.w2.c3) <- c("Status", "PA") # Changing column names
-count.w2.c3$group<- c("Answered", "Closed Permanently") # add new variable with labels
+count.w2.c3$wave2<- c("Answered", "Closed Permanently") # add new variable with labels
 
 ###################################################################################################
 
@@ -401,7 +385,7 @@ count.w2 <- full_join(count.w2, count.w2.c3)
 count.w2[is.na(count.w2)] <- 0 # all nas in 0
 count.w2 <- select(count.w2, -1) # delete status variable
 count.w2 <- count.w2[c(2,1,3,4)] # change column order
-count.w2 %>% add_row(group = "Sample", All = 410, NJ = 331, PA = 79) #add row with total in sample
+count.w2 %>% add_row(wave2 = "Sample", All = 410, NJ = 331, PA = 79) #add row with total in sample
 
 count.w2 # final wave 2 df
 
@@ -432,7 +416,6 @@ x_st.wage.before.pa <- df$x_st.wage.before[df$d_pa == 1]
 # Set histogram bins
 xbins <- list(start=4.20, end=5.60, size = 0.1) # Creating list to use in plot-ly later on. Set start and end of xaxis and the size of the bars
 
-# 
 p.before <- plot_ly(alpha = 0.5) %>% # how opac
   add_histogram(x = x_st.wage.before.nj, 
                   xbins = xbins, # list from earlier
@@ -453,6 +436,7 @@ p.before <- plot_ly(alpha = 0.5) %>% # how opac
                           t = 80, 
                           pad = 0, 
                           autoexpand = TRUE))
+
 
 p.before
 
@@ -476,7 +460,7 @@ p.after <- plot_ly(alpha = 0.5) %>% # how opac
                   xbins = xbins, # list from earlier
                   histnorm = "percent", # unit
                   name = "Wage After (Pennsylvania)") %>% # add label
-  layout(barmode = "group", title = "February 1992",
+  layout(barmode = "group", title = "November 1992",
            xaxis = list(tickvals=seq(4.25, 5.55, 0.1), # tick values of the xaxis
                         title = "Wage in $ per hour", # add title
                         tickangle = 90), # angle of the tick
@@ -595,7 +579,7 @@ results.state.r4 <- bind_rows(resultsb.state.r4.before, resultsb.state.r4.after)
   results.state.r4 <- bind_rows(results.state.r4, results.state.r4[6,]-results.state.r4[3,]) # calculate the difference between row 3 and 6
   results.state.r4$label <- c("Control (Pennsylvania) - before (Balanced)", "Treatment (New Jersey) - before (Balanced)", "Difference - before (Balanced)", "Control (Pennsylvania) - after (Balanced)", "Treatment (New Jersey) - after (Balanced)", "Difference - after (Balanced)", "Control (Pennsylvania) - Change FTE (Balanced)", "Treatment (New Jersey) - Change FTE (Balanced)", "Difference - Change FTE (Balanced)") # add column with labels
   
-  kable(resultsb.state.r4, digits=2)  
+  kable(results.state.r4, digits=2)  
   
 ####################################################################################################
   
@@ -645,7 +629,7 @@ results.state.r5 <- bind_rows(resultsc.state.r5.before, resultsc.state.r5.after)
   results.state.r5 <- bind_rows(results.state.r5, results.state.r5[6,]-results.state.r5[3,]) # calculate the difference between row 3 and 6
   results.state.r5$label<- c("Control (Pennsylvania) - after (Closed)", "Treatment (New Jersey) - after (Closed)", "Difference - after (Closed)", "Control (Pennsylvania) - Before (Closed)", "Treatment (New Jersey) - Before (Closed)", "Difference - Before (Closed)", "Control (Pennsylvania) - Change FTE (Closed)", "Treatment (New Jersey)- Change FTE (Closed)", "Difference - Change FTE (Closed)") # add column with labels
   
-  kable(resultsc.state.r5, digits=2)    
+  kable(results.state.r5, digits=2)    
 
 ####################################################################################################
   
@@ -1143,6 +1127,22 @@ table3
   df2 <- df2 %>%
     mutate(d_ini.wage.gap = 5.05 - x_st.wage.before)
   
+  # FTE before
+for(i in 1:nrow(df2)){
+  df2$d_ini.wage.gap[i] <- 100 - ((df2$x_st.wage.before[i] * 100)/df2$x_st.wage.after[i]) 
+}
+  
+df2$d_ini.wage.gap[df2$d_nj == 0] <- 0
+df2$d_ini.wage.gap
+
+  # FTE before
+for(i in 1:nrow(df2)){
+  df2$d_ini.wage.gap1[i] <- 100 - ((df2$x_st.wage.before[i] * 100)/5.05)
+}  
+  
+df2$d_ini.wage.gap1[df2$d_nj == 0] <- 0
+df2$d_ini.wage.gap1
+
 # then linear model/regression
   
   fit.c3 <- lm((y_fte.after-y_fte.before) ~  
