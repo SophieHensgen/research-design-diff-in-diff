@@ -1088,20 +1088,20 @@ table3
                          y_fte.before,
                          y_fte.after,
                          d_nj,
-                         x_bk,
-                         x_kfc,
-                         x_roys,
-                         x_co.owned,
+                         #x_bk,
+                         #x_kfc,
+                         #x_roys,
+                         #x_co.owned,
                          x_st.wage.before,
                          x_st.wage.after,
-                         x_status.sec.interview,
-                         x_south.j,
-                         x_central.j,
-                         x_northeast.pa,
-                         x_easton.pa) %>%
-           mutate(x_st.wage.after = case_when(x_status.sec.interview == 3 ~ NA_character_, # these stores get an NA
-                                              TRUE ~ as.character(x_st.wage.after)),
-                  x_st.wage.after = as.numeric(x_st.wage.after)) %>%
+                         x_status.sec.interview) %>%
+                         #x_south.j,
+                         #x_central.j,
+                         #x_northeast.pa,
+                         #x_easton.pa) %>%
+           #mutate(x_st.wage.after = case_when(x_status.sec.interview == 3 ~ NA_character_, # these stores get an NA
+            #                                  TRUE ~ as.character(x_st.wage.after)),
+             #     x_st.wage.after = as.numeric(x_st.wage.after)) %>%
                   na.omit()
 
 ## Model (i)/Column 1: Base
