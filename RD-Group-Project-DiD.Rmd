@@ -145,7 +145,7 @@ df$d_pa <- gsub(0, 2, df$d_state)
 df$d_pa <- gsub(1, 0, df$d_pa)
 df$d_pa <- gsub(2, 1, df$d_pa)
 
-df
+str(df)
 
 ```
 
@@ -173,7 +173,7 @@ df[,53] <- lapply(df[,53], as.integer)
 # looking ta the structure of the variables - Check if conversion worked
 str(df)
 
-# Try to come to the right numbers
+# Try to come to the right numbers, set all nas to 0 and then calculate fte
 
 #df$y_full.emp[is.na(df$y_full.emp)] <- 0
 #df$y_part.emp[is.na(df$y_part.emp)] <- 0
