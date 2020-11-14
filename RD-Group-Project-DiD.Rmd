@@ -20,15 +20,14 @@ library(janitor)
 ## Load Data Set
 
 
-```{r load data set}
+```{r load data set, include=FALSE}
 
 # Load in the data set the authors provided under this link "https://davidcard.berkeley.edu/data_sets.html"
 
 # data set is now called df
 
 df <- read.table("public.dat")
-df
-
+str(df)
 ```
 
 ## Code
@@ -45,7 +44,7 @@ arrange(df, V1)
 ```{r Rename Varibales, echo=FALSE}
 
 ## changing into tibble
-df <- as_tibble(df)
+#df <- as_tibble(df)
 
 ## Rename Columns for a better workflow
 # x stands for independent variable/covariates
@@ -105,6 +104,7 @@ df <- df %>%
     x_reg.11.sec = V46 # number of registers open at 11:00 am
     )
 
+str(df)
 ```
 
 ```{r Creating new variables, echo=FALSE}
@@ -145,6 +145,7 @@ df$d_pa <- gsub(0, 2, df$d_state)
 df$d_pa <- gsub(1, 0, df$d_pa)
 df$d_pa <- gsub(2, 1, df$d_pa)
 
+df
 
 ```
 
@@ -172,9 +173,19 @@ df[,53] <- lapply(df[,53], as.integer)
 # looking ta the structure of the variables - Check if conversion worked
 str(df)
 
+# Try to come to the right numbers
+
+#df$y_full.emp[is.na(df$y_full.emp)] <- 0
+#df$y_part.emp[is.na(df$y_part.emp)] <- 0
+#df$y_managers[is.na(df$y_managers)] <- 0
+#df$y_full.emp.sec[is.na(df$y_full.emp.sec)] <- 0
+#df$y_part.emp.sec[is.na(df$y_part.emp.sec)] <- 0
+#df$y_managers.sec[is.na(df$y_managers.sec)] <- 0
 ```
 
 ```{r creating new FTE variable , echo=FALSE}
+
+df$y_full.emp[is.na(df$y_full.emp)] <- 0
 
 # Creating a new variable for FTE --> full-time employees including managers and 0.5x part-time employees
 
@@ -196,7 +207,10 @@ for(i in 1:nrow(df)){
     df$y_managers.sec[i]
 }
 
+str(df)
 
+#df$y_fte.before[df$y_fte.before == 0] <- NA
+#df$y_fte.after[df$y_fte.after == 0] <- NA
 ```
 
 ```{r, echo=FALSE}
@@ -1088,21 +1102,23 @@ table3
                          y_fte.before,
                          y_fte.after,
                          d_nj,
-                         #x_bk,
-                         #x_kfc,
-                         #x_roys,
-                         #x_co.owned,
+                         x_bk,
+                         x_kfc,
+                         x_roys,
+                         x_co.owned,
                          x_st.wage.before,
                          x_st.wage.after,
-                         x_status.sec.interview) %>%
-                         #x_south.j,
-                         #x_central.j,
-                         #x_northeast.pa,
-                         #x_easton.pa) %>%
-           #mutate(x_st.wage.after = case_when(x_status.sec.interview == 3 ~ NA_character_, # these stores get an NA
-            #                                  TRUE ~ as.character(x_st.wage.after)),
-             #     x_st.wage.after = as.numeric(x_st.wage.after)) %>%
+                         x_status.sec.interview,
+                         x_south.j,
+                         x_central.j,
+                         x_northeast.pa,
+                         x_easton.pa) %>%
+           mutate(x_st.wage.after = case_when(x_status.sec.interview == 3 ~ NA_character_, # these stores get an NA
+                                              TRUE ~ as.character(x_st.wage.after)),
+                  x_st.wage.after = as.numeric(x_st.wage.after)) %>%
                   na.omit()
+
+
 
 ## Model (i)/Column 1: Base
 
