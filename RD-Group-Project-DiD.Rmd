@@ -39,6 +39,7 @@ str(df)
 
 arrange(df, V1)
 
+df[df == "."] <- NA
 ```
 
 ```{r Rename Varibales, echo=FALSE}
@@ -185,7 +186,7 @@ str(df)
 
 ```{r creating new FTE variable , echo=FALSE}
 
-df$y_full.emp[is.na(df$y_full.emp)] <- 0
+#df$y_full.emp[is.na(df$y_full.emp)] <- 0
 
 # Creating a new variable for FTE --> full-time employees including managers and 0.5x part-time employees
 
@@ -1118,8 +1119,6 @@ table3
                   x_st.wage.after = as.numeric(x_st.wage.after)) %>%
                   na.omit()
 
-
-
 ## Model (i)/Column 1: Base
 
   fit.c1 <- lm((y_fte.after-y_fte.before) ~ d_nj, # linear model on differences of FTE
@@ -1160,7 +1159,7 @@ df2$d_ini.wage.gap1
 # then linear model/regression
   
   fit.c3 <- lm((y_fte.after-y_fte.before) ~  
-               d_ini.wage.gap, 
+               d_ini.wage.gap1, 
              data = df2)
   summary(fit.c3)
 
