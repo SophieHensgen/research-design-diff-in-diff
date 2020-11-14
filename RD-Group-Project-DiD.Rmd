@@ -1156,10 +1156,19 @@ for(i in 1:nrow(df2)){
 df2$d_ini.wage.gap1[df2$d_nj == 0] <- 0
 df2$d_ini.wage.gap1
 
+
+for(i in 1:nrow(df2)){
+  df2$d_ini.wage.gap2[i] <- (5.05/df2$x_st.wage.before[i])
+}
+mean(df2$d_ini.wage.gap2)
+df2$d_ini.wage.gap1[df2$d_nj == 0] <- 0
+df2$d_ini.wage.gap1[df2$x_st.wage.before == 0] <- 0
+mean(df2$d_ini.wage.gap2)
+
 # then linear model/regression
   
   fit.c3 <- lm((y_fte.after-y_fte.before) ~  
-               d_ini.wage.gap1, 
+               d_ini.wage.gap2, 
              data = df2)
   summary(fit.c3)
 
@@ -1168,19 +1177,18 @@ df2$d_ini.wage.gap1
 ## Model (iv)/Column 4: Initial Wage gap - Controls Chain/Ownership
   
   fit.c4 <- lm((y_fte.after-y_fte.before) ~ 
-               d_ini.wage.gap + x_bk + x_kfc + x_roys + x_co.owned, 
+               d_ini.wage.gap2 + x_bk + x_kfc + x_roys + x_co.owned, 
              data = df2)
   summary(fit.c4)  
 
 ####################################################################################################
   
-## Model (iv)/Column 4: Initial Wage gap - Controls Chain/Ownership + Regions 
+## Model (iv)/Column 5: Initial Wage gap - Controls Chain/Ownership + Regions 
   
   fit.c5 <- lm((y_fte.after-y_fte.before) ~ 
-               d_ini.wage.gap + x_bk + x_kfc + x_roys + x_co.owned + x_south.j + x_central.j + x_northeast.pa + x_easton.pa, 
+               d_ini.wage.gap2 + x_bk + x_kfc + x_roys + x_co.owned + x_south.j + x_central.j + x_northeast.pa + x_easton.pa, 
              data = df2)
   summary(fit.c5)  
-  
   
 ```
 
