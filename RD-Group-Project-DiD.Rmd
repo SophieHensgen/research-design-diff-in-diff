@@ -15,6 +15,9 @@ library(plotly)
 library(kableExtra)
 library(naniar)
 library(janitor)
+library(PanelMatch)
+library(haven)
+library(Matching)
 ```
 
 ## Load Data Set
@@ -152,9 +155,9 @@ str(df)
 
 ```{r changing class , echo=FALSE}
 
-# Some variables are character vectors, which cannot be used in a summary. Therefore they have to be changed. 
+## Some variables are character vectors, which cannot be used in a summary. Therefore they have to be changed. 
 
-# converting into numeric
+# Converting into numeric
 
 df[,12:17] <- lapply(df[,12:17], as.numeric) #. will be NAs from now on
 
@@ -165,7 +168,7 @@ df[,23:27] <- lapply(df[,23:27], as.numeric)
 df[,31:46] <- lapply(df[,31:46], as.numeric)
 
 
-# convert into integer as it is a dummy variable with only 0 and 1, here convert directly to integer as the numbers would change if you first convert into factor
+# Convert into integer as it is a dummy variable with only 0 and 1, here convert directly to integer as the numbers would change if you first convert into factor
 
 df[,48:51] <- lapply(df[,48:51], as.integer)
 
@@ -185,8 +188,6 @@ str(df)
 ```
 
 ```{r creating new FTE variable , echo=FALSE}
-
-#df$y_full.emp[is.na(df$y_full.emp)] <- 0
 
 # Creating a new variable for FTE --> full-time employees including managers and 0.5x part-time employees
 
@@ -210,8 +211,6 @@ for(i in 1:nrow(df)){
 
 str(df)
 
-#df$y_fte.before[df$y_fte.before == 0] <- NA
-#df$y_fte.after[df$y_fte.after == 0] <- NA
 ```
 
 ```{r, echo=FALSE}
@@ -221,7 +220,7 @@ str(df)
 #subsetting the data frame
 
 df.select <- df %>%
-  select(x_co.owned, 
+  dplyr::select(x_co.owned, 
          x_south.j, 
          x_central.j, 
          x_north.j, 
@@ -260,7 +259,7 @@ count.w1.r3.c23 <- df %>%  #for nj and pa respectively
 count.w1.r3.c23$states <- c("NJ", "PA") # add variable of labels
 count.w1.r3 <- count.w1.r3.c23 %>% 
   add_row(d_state = NA, n = count.w1.r3.c1, states = "all") # add new row: total interviewed
-count.w1.r3 <- select(count.w1.r3, -1) # delete status variable
+count.w1.r3 <- dplyr::select(count.w1.r3, -1) # delete status variable
 count.w1.r3 <- count.w1.r3[c(2,1)] # change order of columns
 count.w1.r3 <- as.data.frame(t(count.w1.r3)) # change rows to columns and columns to rows
 count.w1.r3 <- count.w1.r3 %>% # first row as names of columns
@@ -291,7 +290,7 @@ count.w1.r4 <- full_join(count.w1.r4, count.w1.r4.c3)
 
 count.w1.r4$states <- c("All", "NJ", "PA") # add variable with labels
 
-count.w1.r4 <- select(count.w1.r4, -3) # delete status variable
+count.w1.r4 <- dplyr::select(count.w1.r4, -3) # delete status variable
 count.w1.r4 <- count.w1.r4[c(3,1,2)] # change order of columns
 count.w1.r4 <- as.data.frame(t(count.w1.r4)) # change rows to columns and columns to rows
 count.w1.r4 <- count.w1.r4 %>% # first row as names of columns
@@ -398,7 +397,7 @@ count.w2 <- full_join(count.w2, count.w2.c3)
  
 # Changing layout
 count.w2[is.na(count.w2)] <- 0 # all nas in 0
-count.w2 <- select(count.w2, -1) # delete status variable
+count.w2 <- dplyr::select(count.w2, -1) # delete status variable
 count.w2 <- count.w2[c(2,1,3,4)] # change column order
 count.w2 %>% add_row(wave2 = "Sample", All = 410, NJ = 331, PA = 79) #add row with total in sample
 
@@ -493,6 +492,26 @@ p.after
 ```{r Table 3 - Average Employment per store before and after the raise, echo=FALSE}
 
 # Sophie
+#select data frame
+
+  df <- df %>% dplyr::select(x_id,
+                         y_fte.before,
+                         y_fte.after,
+                         d_nj,
+                         x_bk,
+                         x_kfc,
+                         x_roys,
+                         x_wendys,
+                         x_co.owned,
+                         x_st.wage.before,
+                         x_st.wage.after,
+                         x_status.sec.interview,
+                         x_south.j,
+                         x_central.j,
+                         x_northeast.pa,
+                         x_easton.pa, 
+                         x_store.name
+                         )
 
 # Table 3: Column 1-3, from left to right)
 
@@ -549,6 +568,7 @@ results.state.r2 <- df %>%
   
 ## 4th row: Change in MEANs and SEs between both time points, balanced sample
   
+
 # Filter observations in both waves
   df.balanced <- df %>% na.omit
     
@@ -1099,13 +1119,14 @@ table3
 
 ## First select you data set, with which you want to work
 
- df2 <- dplyr::select(df, 
+ df2 <- dplyr::select(df,x_id,
                          y_fte.before,
                          y_fte.after,
                          d_nj,
                          x_bk,
                          x_kfc,
                          x_roys,
+                         x_wendys,
                          x_co.owned,
                          x_st.wage.before,
                          x_st.wage.after,
@@ -1113,7 +1134,8 @@ table3
                          x_south.j,
                          x_central.j,
                          x_northeast.pa,
-                         x_easton.pa) %>%
+                         x_easton.pa,
+                         x_store.name) %>%
            mutate(x_st.wage.after = case_when(x_status.sec.interview == 3 ~ NA_character_, # these stores get an NA
                                               TRUE ~ as.character(x_st.wage.after)),
                   x_st.wage.after = as.numeric(x_st.wage.after)) %>%
@@ -1197,9 +1219,55 @@ df2$d_ini.wage.gap1[df2$d_nj == 0] <- 0
 
 ```
 
+```{r Matching, echo=FALSE}
+
+# Sophie 
+
+ 
+df2$fte.0 <- df2$y_fte.before
+df2$fte.1 <- df2$y_fte.after
 
 
+ df2 <- dplyr::select(df2,
+                         x_id,
+                         fte.0,
+                         fte.1,
+                         d_nj,
+                         x_bk,
+                         x_kfc,
+                         x_roys, 
+                         x_wendys,
+                         x_south.j,
+                         x_central.j,
+                         x_northeast.pa,
+                         x_easton.pa)
 
+data_long <- gather(df2, time, FTE, fte.0:fte.1, factor_key=TRUE)
+
+data_long$time <- gsub("fte.0", 0, data_long$time)
+data_long$time <- gsub("fte.1", 1, data_long$time)
+data_long
+
+gen.matched <- GenMatch(X = cbind(data_long$x_bk, data_long$x_kfc, data_long$x_roys, data_long$x_wendys),
+                        Tr = data_long$d_nj)
+
+gen.results <- Match(X = cbind(data_long$x_bk, data_long$x_kfc, data_long$x_roys, data_long$x_wendys),
+               Tr = data_long$d_nj,
+               Weight.matrix = gen.matched)
+
+
+MatchBalance(data_long$d_nj ~ data_long$x_bk + data_long$x_kfc + data_long$x_roys + data_long$x_wendys,
+            match.out = gen.results,
+            data = data_long)
+
+gen.results <- Match(X = cbind(data_long$x_bk, data_long$x_kfc, data_long$x_roys, data_long$x_wendys),
+               Tr = data_long$d_nj,
+               Y = data_long$FTE,
+               Weight.matrix = gen.matched)
+
+summary(gen.results)
+
+```
 
 
 
