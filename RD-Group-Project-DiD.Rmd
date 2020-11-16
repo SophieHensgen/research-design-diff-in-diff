@@ -1138,32 +1138,30 @@ table3
 ## Model (iii)/Column 3: Initial Wage gap - no controls
   
  
-  # Initial wage gap: Proportional increase in starting wage necessary to raise starting wage to new minimum wage (new wage of the store) (For PA the wage gap is 0)
+# Initial wage gap: Proportional increase in starting wage necessary to raise starting wage to new minimum wage (new wage of the store) (For PA the wage gap is 0)
   
 for(i in 1:nrow(df2)){
   df2$d_ini.wage.gap[i] <- 100 - ((df2$x_st.wage.before[i] * 100)/df2$x_st.wage.after[i])  
 }
   
 df2$d_ini.wage.gap[df2$d_nj == 0] <- 0
-df2$d_ini.wage.gap
 
-  # Initial wage gap: Proportional increase in starting wage necessary to raise starting wage to new minimum wage (new minimum wage 5.05) (For PA the wage gap is 0)
+
+# Initial wage gap: Proportional increase in starting wage necessary to raise starting wage to new minimum wage (new minimum wage 5.05) (For PA the wage gap is 0)
 
 for(i in 1:nrow(df2)){
   df2$d_ini.wage.gap1[i] <- 100 - ((df2$x_st.wage.before[i] * 100)/5.05)
 }  
   
 df2$d_ini.wage.gap1[df2$d_nj == 0] <- 0
-df2$d_ini.wage.gap1
 
+# Initial wage gap: Proportional increase in starting wage necessary to raise starting wage to new minimum wage (new minimum wage 5.05) (For PA the wage gap is 0) Scale 1-0
 
 for(i in 1:nrow(df2)){
   df2$d_ini.wage.gap2[i] <- (5.05/df2$x_st.wage.before[i])
 }
-mean(df2$d_ini.wage.gap2)
 df2$d_ini.wage.gap1[df2$d_nj == 0] <- 0
-df2$d_ini.wage.gap1[df2$x_st.wage.before == 0] <- 0
-mean(df2$d_ini.wage.gap2)
+
 
 # then linear model/regression
   
