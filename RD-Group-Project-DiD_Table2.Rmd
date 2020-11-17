@@ -1,0 +1,1535 @@
+---
+title: "RD-Group-Project-DiD"
+author: "Sophie Hensgen"
+date: "11/5/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(readr)
+library(tidyverse)
+library(stargazer)
+library(plotly)
+library(kableExtra)
+library(naniar)
+library(janitor)
+library(PanelMatch)
+library(haven)
+library(Matching)
+```
+
+## Load Data Set
+
+
+```{r load data set, include=FALSE}
+
+# Load in the data set the authors provided under this link "https://davidcard.berkeley.edu/data_sets.html"
+
+# data set is now called df
+
+df <- read.table("public.dat")
+str(df)
+```
+
+## Code
+
+
+```{r arrange data, echo=FALSE}
+
+# Arrange data to better observe
+
+arrange(df, V1)
+
+df[df == "."] <- NA
+```
+
+```{r Rename Varibales, echo=FALSE}
+
+## changing into tibble
+#df <- as_tibble(df)
+
+## Rename Columns for a better workflow
+# x stands for independent variable/covariates
+# y stands for dependent variable
+# d stands for treatment variable
+df <- df %>% 
+  rename(
+    x_id = V1, # ID of each restaurant
+    x_store.name = V2,  #chain 1=bk; 2=kfc; 3=roys; 4=wendys
+    x_co.owned = V3, # company owned (1) or not (0)
+    d_state = V4, # state: nj (1) or pa (0)
+    x_south.j = V5,# south nj (1) or not (0)
+    x_central.j = V6, # central nj (1) or not (0)
+    x_north.j = V7, # north nj (1) or not (0)
+    x_northeast.pa = V8, # northeast pa (1) or not (0)
+    x_easton.pa = V9, # easton pa (1) or not (0)
+    x_shore.j = V10, # shore nj (1) or not (0)
+    
+    # First Interview
+    x_callbacks.first = V11, # number of call backs (if contacted by first try = 0)
+    y_full.emp = V12, # number of full-time employees
+    y_part.emp = V13, # number of part-time employees
+    y_managers = V14, # number of managers 
+    x_st.wage.before = V15, # starting wage at time point t0 
+    x_months.raise = V16, # months to usual first raise
+    x_amount.raise = V17, # usual amount of first raise
+    x_cash.bounty = V18, # if there is cash bounty for new workers (1)
+    y_employees.affected.n.minimum = V19, # percentage of employees affected by new minimum
+    x_reduced = V20, # free/reduced price meals for employees
+    x_open.hour = V21, # hour of opening
+    x_open.per.day = V22, # amount of open hours per day
+    x_medium.soda = V23, # price of medium soda, including tax 
+    x_small.fries = V24, # price small fries, including tax
+    x_entree = V25, # price of entree, including tax 
+    x_cash.reg = V26, # number of cash registers in store
+    x_reg.11 = V27, # number of registers open at 11:00 am
+    
+    #Second interview
+    x_type.sec.interview = V28, # type of second interview: 1 = phone, 2 = personal
+    x_status.sec.interview = V29, # status of second interview (0 = refused second interview, 1 = answered 2nd interview, 2 = closed for renovations,3 = closed "permanently", 4 = closed for highway, 5 = closed due to Mall fire )
+    x_date.sec = V30, # date of the second interview
+    x_callbacks.sec = V31, # number of call-backs
+    y_full.emp.sec = V32, # number of full-time employees
+    y_part.emp.sec = V33, # number of part-time employees
+    y_managers.sec = V34, # number of managers 
+    x_st.wage.after = V35, # starting wage at time point t1
+    x_months.raise.sec = V36, # months to usual first raise
+    x_amount.raise.sec = V37, # usual amount of first raise
+    x_special.program.sec = V38, # special program for new workers (1)
+    x_reduced.price = V39, # free/reduced price meals for employees
+    x_open.hour.sec = V40, # hour of opening
+    x_open.per.day.sec = V41, # amount of open hours per day
+    x_medium.soda.sec = V42, # price of medium soda, including tax 
+    x_small.fries.sec = V43, # price small fries, including tax
+    x_entree.sec = V44, #price entree, including tax
+    x_cash.reg.sec = V45, # number of cash registers in store
+    x_reg.11.sec = V46 # number of registers open at 11:00 am
+    )
+
+str(df)
+```
+
+```{r Creating new variables, echo=FALSE}
+
+# Creating a new variable which says 1 if the restaurant was interviewed in the first wave
+df$x_interviewed.w1 <- (df$x_interviewed.w1 = 1)
+
+# creating new variables for each store (x_store.name) and state (d_state) -> dummies. 
+
+# x_bk dummy variable for burger king (1) or not (0)
+df$x_bk <- gsub(2, 0, df$x_store.name) 
+df$x_bk <- gsub(3, 0, df$x_bk) 
+df$x_bk <- gsub(4, 0, df$x_bk) 
+
+# x_kfc dummy variable for KFC (1) or not (0)
+df$x_kfc <- gsub(1, 0, df$x_store.name) 
+df$x_kfc <- gsub(3, 0, df$x_kfc) 
+df$x_kfc <- gsub(4, 0, df$x_kfc) 
+df$x_kfc <- gsub(2, 1, df$x_kfc) 
+
+# x_roys dummy variable for Roys (1) or not (0)
+df$x_roys <- gsub(1, 0, df$x_store.name) 
+df$x_roys <- gsub(2, 0, df$x_roys) 
+df$x_roys <- gsub(4, 0, df$x_roys) 
+df$x_roys <- gsub(3, 1, df$x_roys) 
+
+# x_wendys dummy variable for Wendys (1) or not (0)
+df$x_wendys <- gsub(1, 0, df$x_store.name) 
+df$x_wendys <- gsub(3, 0, df$x_wendys) 
+df$x_wendys <- gsub(2, 0, df$x_wendys) 
+df$x_wendys <- gsub(4, 1, df$x_wendys)
+
+# d_nj dummy variable for restaurants in NJ (1) or not (0)
+df$d_nj <- df$d_state
+
+# d_nj dummy variable for restaurants in PA (1) or not (0)
+df$d_pa <- gsub(0, 2, df$d_state)
+df$d_pa <- gsub(1, 0, df$d_pa)
+df$d_pa <- gsub(2, 1, df$d_pa)
+
+str(df)
+
+```
+
+```{r changing class , echo=FALSE}
+
+## Some variables are character vectors, which cannot be used in a summary. Therefore they have to be changed. 
+
+# Converting into numeric
+
+df[,12:17] <- lapply(df[,12:17], as.numeric) #. will be NAs from now on
+
+df[,19] <- lapply(df[,19], as.numeric)
+
+df[,23:27] <- lapply(df[,23:27], as.numeric)
+
+df[,31:46] <- lapply(df[,31:46], as.numeric)
+
+
+# Convert into integer as it is a dummy variable with only 0 and 1, here convert directly to integer as the numbers would change if you first convert into factor
+
+df[,48:51] <- lapply(df[,48:51], as.integer)
+
+df[,53] <- lapply(df[,53], as.integer)
+
+# looking ta the structure of the variables - Check if conversion worked
+str(df)
+
+# Try to come to the right numbers, set all nas to 0 and then calculate fte
+
+#df$y_full.emp[is.na(df$y_full.emp)] <- 0
+#df$y_part.emp[is.na(df$y_part.emp)] <- 0
+#df$y_managers[is.na(df$y_managers)] <- 0
+#df$y_full.emp.sec[is.na(df$y_full.emp.sec)] <- 0
+#df$y_part.emp.sec[is.na(df$y_part.emp.sec)] <- 0
+#df$y_managers.sec[is.na(df$y_managers.sec)] <- 0
+```
+
+```{r creating new FTE variable , echo=FALSE}
+
+# Creating a new variable for FTE --> full-time employees including managers and 0.5x part-time employees
+
+#df$y_fte.before <- df$y_full.emp + df$y_managers + df$y_part.emp*0.5
+#df$y_fte.after <- df$y_part.emp.sec*0.5 + df$y_full.emp.sec + df$y_managers.sec 
+
+# FTE before
+for(i in 1:nrow(df)){
+  df$y_fte.before[i] <- df$y_full.emp[i] + # Full-time employees
+    0.5*(df$y_part.emp[i]) + # plus part-time employees counted as 0.5
+    df$y_managers[i] # plus number of managers
+}
+
+
+# FTE after
+for(i in 1:nrow(df)){
+  df$y_fte.after[i] <- df$y_full.emp.sec[i] +
+    0.5*(df$y_part.emp.sec[i]) +
+    df$y_managers.sec[i]
+}
+
+str(df)
+
+```
+
+```{r, echo=FALSE}
+
+#Summary Statistic of a subset of the data frame df
+
+#subsetting the data frame
+
+df.select <- df %>%
+  dplyr::select(x_co.owned, 
+         x_south.j, 
+         x_central.j, 
+         x_north.j, 
+         x_northeast.pa, 
+         x_easton.pa, 
+         x_st.wage.before, 
+         x_st.wage.after, 
+         x_open.per.day, 
+         x_open.per.day.sec, 
+         y_fte.before, 
+         y_fte.after, 
+         d_state, 
+         x_store.name)
+
+#summary of the subset df.select
+
+stargazer(data.frame(df.select), type = "text", summary = TRUE)
+
+```
+
+
+
+```{r Table 1 (Wave 1) - Sample Size and response rate, echo=FALSE}
+
+### Wave 1 - February 15 - March 4 1992
+
+## 3rd Row: Number Interviewed
+
+# Creating the values:
+count.w1.r3.c1 <- nrow(df) # count of all interviewed
+
+count.w1.r3.c23 <- df %>%  #for nj and pa respectively 
+  count(d_state)
+
+# Changing layout
+count.w1.r3.c23$states <- c("NJ", "PA") # add variable of labels
+count.w1.r3 <- count.w1.r3.c23 %>% 
+  add_row(d_state = NA, n = count.w1.r3.c1, states = "all") # add new row: total interviewed
+count.w1.r3 <- dplyr::select(count.w1.r3, -1) # delete status variable
+count.w1.r3 <- count.w1.r3[c(2,1)] # change order of columns
+count.w1.r3 <- as.data.frame(t(count.w1.r3)) # change rows to columns and columns to rows
+count.w1.r3 <- count.w1.r3 %>% # first row as names of columns
+  row_to_names(row_number = 1)
+
+###################################################################################################
+
+## 4th Row: Response Rate 
+
+# Creating the values:
+count.w1.r4.c1 <- df %>% # response rate all
+  tally(x_interviewed.w1)%>%
+  mutate(percent = n/473)
+
+count.w1.r4.c2 <- df %>% # response rate nj
+  count(d_state) %>%
+  filter(d_state == 1) %>%
+  mutate(percent = n/364)
+
+count.w1.r4.c3 <- df %>% # response rate pa
+  count(d_state) %>%
+  filter(d_state == 0) %>%
+  mutate(percent = n/109)
+
+# Changing layout
+count.w1.r4 <- full_join(count.w1.r4.c1, count.w1.r4.c2) # combine data frames from before
+count.w1.r4 <- full_join(count.w1.r4, count.w1.r4.c3)
+
+count.w1.r4$states <- c("All", "NJ", "PA") # add variable with labels
+
+count.w1.r4 <- dplyr::select(count.w1.r4, -3) # delete status variable
+count.w1.r4 <- count.w1.r4[c(3,1,2)] # change order of columns
+count.w1.r4 <- as.data.frame(t(count.w1.r4)) # change rows to columns and columns to rows
+count.w1.r4 <- count.w1.r4 %>% # first row as names of columns
+  row_to_names(row_number = 1)
+
+count.w1.r4[,1:3] <- lapply(count.w1.r4[,1:3], as.numeric) #change form character to numeric
+count.w1.r4[1,] <- format(round(count.w1.r4[1,], 0), nsmall = 0) # decimal points for row 1
+count.w1.r4[,1:3] <- lapply(count.w1.r4[,1:3], as.numeric) #change form character to numeric, again, as it changed due to the comment before
+count.w1.r4[2,] <- format(round(count.w1.r4[2,], 2), nsmall = 2) # decimal points for row 2
+count.w1.r4[,1:3] <- lapply(count.w1.r4[,1:3], as.numeric) 
+
+###################################################################################################
+
+## 1st Row: Number of stores in the sample:
+
+# drawn from the text (cannot be seen in the data set): 473 (all), 364 (nj), 109 (pa)
+
+count.w1 <- count.w1.r4 %>% add_row(All = 473, NJ = 364, PA = 109) # add row - first row by hand
+
+###################################################################################################
+
+## 2nd Row: Number of refusals:
+
+# drawn from the text (cannot be seen in the data set): 63 (all), 33 (nj), 30 (pa)
+
+count.w1 <- count.w1%>% add_row(All = 63, NJ = 33, PA = 30) # add row - second row by hand
+
+###################################################################################################
+
+## Final Layout
+
+count.w1$wave1 <- c("Number Interview", "Response Rate (percentage)", "Number of Stores in Sample Frame","Number of refusals") # add variable with labels
+
+count.w1 <- count.w1[c(3, 4, 1, 2),] # change the order of rows
+count.w1 <- count.w1[,c(4, 1, 2, 3)] # change the order of columns
+
+count.w1
+```
+
+```{r Table 1 (Wave 2) - Sample Size and response rate, echo=FALSE}
+
+
+### Wave 2 - November 5 - December 31 1992
+
+## Row 6th: Number of stores in sample
+
+count.w1.r3.c1 <- nrow(df) # count of all stores in the sample of the second wave
+
+count.w1.r3.c23 <- df %>%  #for nj and pa respectively 
+  count(d_state)
+
+###################################################################################################
+
+## Column 1: for rows 6 - 10
+
+# 0 = refused second interview (count = 1)
+# 1 = answered 2nd interview (count = 399)
+# 2 = closed for renovations (count = 2)
+# 3 = closed "permanently" (count = 6)
+# 4 = closed for highway construction (count = 1)
+# 5 = closed due to Mall fire (count = 1)
+
+# Creating the values:
+count.w2.c1 <- df %>% 
+  count(x_status.sec.interview) # Count amount for each value of x_status.sec.interview
+
+# Changing layout
+colnames(count.w2.c1) <- c("Status", "All") # Change column names
+count.w2.c1$wave2<- c("Refused", "Answered", "Renovations", "Closed Permanently", "Construction", "Mall fire") # add new variable with labels
+
+###################################################################################################
+
+## Column 2: for rows 6 - 10
+
+# Creating the values:
+count.w2.c2 <- df %>% 
+  filter(d_state == 1) %>% # NJ
+  count(x_status.sec.interview)
+
+# Changing layout
+colnames(count.w2.c2) <- c("Status", "NJ") # Changing column names
+count.w2.c2$wave2<- c("Refused", "Answered", "Renovations", "Closed Permanently", "Construction", "Mall fire") # add new variable with labels
+
+###################################################################################################
+
+## Column 3: for rows 6 - 10
+
+# Creating the values:
+count.w2.c3 <- df %>% 
+  filter(d_state == 0) %>% # PA
+  count(x_status.sec.interview)
+
+# Changing layout
+colnames(count.w2.c3) <- c("Status", "PA") # Changing column names
+count.w2.c3$wave2<- c("Answered", "Closed Permanently") # add new variable with labels
+
+###################################################################################################
+
+## Column 1 - 3 & columns 5 - 10
+
+# joining the individual df
+count.w2 <- full_join(count.w2.c1, count.w2.c2) 
+count.w2 <- full_join(count.w2, count.w2.c3)
+ 
+# Changing layout
+count.w2[is.na(count.w2)] <- 0 # all nas in 0
+count.w2 <- dplyr::select(count.w2, -1) # delete status variable
+count.w2 <- count.w2[c(2,1,3,4)] # change column order
+count.w2 %>% add_row(wave2 = "Sample", All = 410, NJ = 331, PA = 79) #add row with total in sample
+
+count.w2 # final wave 2 df
+
+```
+
+```{r Table 2 - Means of Key Variables, echo=FALSE}
+
+# Khizer 
+
+NJ_df <- df[df$d_state == 1,] # NJ
+total_NJ <- nrow(NJ_df)
+total_BK <- nrow (NJ_df[NJ_df$x_store.name ==1,]) 
+percent_NJ_BK <- total_BK/total_NJ *100
+
+total_NJ <- nrow(NJ_df)
+total_KFC <- nrow (NJ_df[NJ_df$x_store.name ==2,]) #KFC in NJ
+percent_NJ_KFC <- total_KFC/total_NJ *100
+
+total_NJ <- nrow(NJ_df)
+total_roys <- nrow (NJ_df[NJ_df$x_store.name ==3,]) #roys in NJ
+percent_NJ_roys <- total_roys/total_NJ *100
+
+total_NJ <- nrow(NJ_df)
+total_wendys <- nrow (NJ_df[NJ_df$x_store.name ==4,]) #wendys in NJ
+percent_NJ_wendys <- total_wendys/total_NJ *100
+
+PA_df <- df[df$d_state == 0,] # PA 
+total_PA <- nrow(PA_df)
+total_BK <- nrow (PA_df[PA_df$x_store.name ==1,]) # BK in PA
+percent_PA_BK <- total_BK/total_PA *100
+
+total_PA <- nrow(PA_df)
+total_KFC <- nrow (PA_df[PA_df$x_store.name ==2,]) #KFC in PA
+percent_PA_KFC <- total_KFC/total_PA *100
+
+total_PA <- nrow(PA_df)
+total_roys <- nrow (PA_df[PA_df$x_store.name ==3,]) #roys in PA
+percent_PA_roys <- total_roys/total_PA *100
+
+total_PA <- nrow(PA_df)
+total_wendys <- nrow (PA_df[PA_df$x_store.name ==4,]) #wendys in PA
+percent_PA_wendys <- total_wendys/total_PA *100
+
+
+
+# 2nd chunk
+
+NJ_df
+
+NJ_df$y_fte.before <- NJ_df$y_full.emp + NJ_df$y_managers + NJ_df$y_part.emp*0.5
+
+
+NJ_df$y_fte.after <- NJ_df$y_part.emp.sec*0.5 + NJ_df$y_full.emp.sec + NJ_df$y_managers.sec 
+
+
+PA_df$y_fte.before <- PA_df$y_full.emp + PA_df$y_managers + PA_df$y_part.emp*0.5
+
+
+PA_df$y_fte.after <- PA_df$y_part.emp.sec*0.5 + PA_df$y_full.emp.sec + PA_df$y_managers.sec 
+
+
+# FTE before
+for(i in 1:nrow(df)){
+  df$y_fte.before[i] <- df$y_full.emp[i] + # Full-time employees
+    0.5*(df$y_part.emp[i]) + # plus part-time employees counted as 0.5
+    df$y_managers[i] # plus number of managers
+}
+
+
+# FTE after
+for(i in 1:nrow(df)){
+  df$y_fte.after[i] <- df$y_full.emp.sec[i] +
+    0.5*(df$y_part.emp.sec[i]) +
+    df$y_managers.sec[i]
+}
+
+
+# 1st wave 
+NJ.before <- mean(NJ_df$y_fte.before , na.rm=TRUE) # FTE 1st wave NJ
+PA.before <- mean(PA_df$y_fte.before , na.rm=TRUE) # FTE 1st wave PA
+NJ.before_wage <- mean(NJ_df$x_st.wage.before , na.rm=TRUE) # Starting wage 1st wave NJ
+PA.before_wage <- mean(PA_df$x_st.wage.before , na.rm=TRUE) # Starting wage 1st wave PA
+NJ.before_openday <- mean(NJ_df$x_open.per.day , na.rm=TRUE) # Open hours 1st wave NJ
+PA.before_openday <- mean(PA_df$x_open.per.day , na.rm=TRUE) # Open hours 1st wave PA
+NJ.before_bonus <- mean(NJ_df$x_cash.bounty , na.rm=TRUE)*100 # Recruiting bonus 1st wave NJ
+PA.before_bonus <- mean(PA_df$x_cash.bounty , na.rm=TRUE)*100 # Recruiting bonus 1st wave PA
+NJ.before_Pfull <- mean(NJ_df$x_medium.soda +NJ_df$x_small.fries +NJ_df$x_entree, na.rm=TRUE) # Price of full meal 1st wave NJ
+PA.before_Pfull <- mean(PA_df$x_medium.soda +PA_df$x_small.fries +PA_df$x_entree, na.rm=TRUE) # Price of full meal 1st wave PA
+
+# Percentage full-time employees in NJ 1st wave
+NJ_df <- df[df$d_state == 1,] # NJ
+NJ_df_before<- NJ_df$y_full.emp
+part_time_len <- length(NJ_df$y_part.emp)
+managers_len <- length(NJ_df$y_managers)
+ompleterecords <- na.omit(NJ_df_before) 
+NJ_df_per.1 = length(ompleterecords)/(length(NJ_df_before)+part_time_len+managers_len) 
+NJ_df_per.1 = NJ_df_per.1*100
+mean(NJ_df_per.1)
+
+# Percentage full-time employees in PA 1st wave
+PA_df <- df[df$d_state == 0,] # PA
+PA_df_before<- PA_df$y_full.emp
+part_time_len <- length(PA_df$y_part.emp)
+managers_len <- length(PA_df$y_managers)
+ompleterecords <- na.omit(PA_df_before) 
+PA_df_per.1 = length(ompleterecords)/(length(PA_df_before)+part_time_len+managers_len) 
+PA_df_per.1 = PA_df_per.1*100
+mean(PA_df_per.1)
+
+# Wage = $4.25 (percentage) in NJ 1st wave
+NJ_df <- df[df$d_state == 1,] # NJ
+NJ_df2 <- NJ_df$x_st.wage.before  #total
+ompleterecords <- na.omit(NJ_df2)
+NJ_df_wage.45 <- ompleterecords[ompleterecords == 4.25]
+percent_wage_45 <- (length(NJ_df_wage.45)/length(NJ_df2)) *100
+
+mean(NJ_df_wage.45)
+
+# Wage = $4.25 (percentage) in PA 1st wave
+PA_df <- df[df$d_state == 0,] # NJ 
+PA_df2 <- PA_df$x_st.wage.before  #total
+ompleterecords <- na.omit(PA_df2)
+PA_df_wage.45 <- ompleterecords[ompleterecords == 4.25]
+percent_wage_45 <- (length(PA_df_wage.45)/length(PA_df2)) *100
+
+mean(PA_df_wage.45)
+
+
+# 2nd wave
+
+NJ.after <- mean(NJ_df$y_fte.after, na.rm=TRUE)# FTE 2nd wave NJ 
+PA.after <- mean(PA_df$y_fte.after, na.rm=TRUE)# FTE 2nd wave PA 
+NJ.after_wage <- mean(NJ_df$x_st.wage.after, na.rm=TRUE) # Starting wage 2nd wave NJ
+PA.after <- mean(PA_df$x_st.wage.after, na.rm=TRUE)# Starting wage 2nd wave PA 
+NJ.after_openday <- mean(NJ_df$x_open.per.day.sec, na.rm=TRUE) # Open hours 2nd wave NJ
+PA.after_openday <- mean(PA_df$x_open.per.day.sec, na.rm=TRUE) # Open hours 2nd wave PA
+NJ.after_bonus <- mean(NJ_df$x_special.program.sec, na.rm=TRUE)*100 # Recruiting bonus 2nd wave NJ
+PA.after_bonus <- mean(PA_df$x_special.program.sec, na.rm=TRUE)*100 # Recruiting bonus 2nd wave PA
+NJ.after_pfull <- mean(NJ_df$x_medium.soda.sec +NJ_df$x_small.fries.sec +NJ_df$x_entree.sec, na.rm=TRUE) # Price of full meal 2nd wave NJ
+PA.after_pfull <- mean(PA_df$x_medium.soda.sec +PA_df$x_small.fries.sec +PA_df$x_entree.sec, na.rm=TRUE) # Price of full meal 2nd wave PA
+
+
+# Percentage full-time employees in NJ 2nd wave
+NJ_df <- df[df$d_state == 1,] # NJ
+NJ_df_after<- NJ_df$y_full.emp.sec 
+part_time_len <- length(NJ_df$y_part.emp.sec)
+managers_len <- length(NJ_df$y_managers.sec)
+ompleterecords <- na.omit(NJ_df_after) 
+NJ_df_per.2 = length(ompleterecords)/(length(NJ_df_after)+part_time_len+managers_len) 
+NJ_df_per.2 = NJ_df_per.2*100
+mean(NJ_df_per.2)
+
+# Percentage full-time employees in PA 2nd wave
+PA_df <- df[df$d_state == 0,] # PA
+PA_df_after<- PA_df$y_full.emp.sec 
+part_time_len <- length(PA_df$y_part.emp.sec)
+managers_len <- length(PA_df$y_managers.sec)
+ompleterecords <- na.omit(PA_df_after) 
+PA_df_per.2 = length(ompleterecords)/(length(PA_df_after)+part_time_len+managers_len) 
+PA_df_per.2 = PA_df_per.2*100
+mean(PA_df_per.2)
+
+# Wage = $4.25 (percentage) in NJ 2nd wave
+NJ_df <- df[df$d_state == 1,] # NJ
+NJ_df2 <- NJ_df$x_st.wage.after  #total
+ompleterecords <- na.omit(NJ_df2)
+NJ_df_wage.45 <- ompleterecords[ompleterecords == 4.25]
+percent_wage_45 <- (length(NJ_df_wage.45)/length(NJ_df2)) *100
+
+mean(NJ_df_wage.45)
+
+# Wage = $4.25 (percentage) in PA 2nd wave
+PA_df <- df[df$d_state == 0,] # PA 
+PA_df2 <- PA_df$x_st.wage.after  #total
+ompleterecords <- na.omit(PA_df2)
+PA_df_wage.45 <- ompleterecords[ompleterecords == 4.25]
+percent_wage_45 <- (length(PA_df_wage.45)/length(PA_df2)) *100
+
+mean(PA_df_wage.45)
+
+# Wage = $5.05 (percentage) in NJ 2nd wave
+NJ_df <- df[df$d_state == 1,] # NJ
+NJ_df2 <- NJ_df$x_st.wage.after  #total
+ompleterecords <- na.omit(NJ_df2)
+NJ_df_wage.50 <- ompleterecords[ompleterecords == 5.05]
+percent_wage.50 <- (length(NJ_df_wage.50)/length(NJ_df2)) *100
+
+mean(NJ_df_wage.50)
+
+# Wage = $5.05 (percentage) in PA 2nd wave
+PA_df <- df[df$d_state == 0,] # PA 
+PA_df2 <- PA_df$x_st.wage.after  #total
+ompleterecords <- na.omit(PA_df2)
+PA_df_wage.50 <- ompleterecords[ompleterecords == 5.05]
+percent_wage.50 <- (length(PA_df_wage.50)/length(PA_df2)) *100
+
+mean(PA_df_wage.50)
+
+
+
+
+
+# Table wave 2
+
+
+
+
+```
+
+```{r Figure 1 - Distribution of starting wage rates, echo=FALSE}
+
+# Sophie 
+
+### Replication of Figure 1
+
+## Creating specific objects for starter wage before respectively for nj and pa
+
+x_st.wage.before.nj <- df$x_st.wage.before[df$d_nj == 1]
+x_st.wage.before.pa <- df$x_st.wage.before[df$d_pa == 1]
+
+###################################################################################################
+
+## Plot for before treatment
+
+# Set histogram bins
+xbins <- list(start=4.20, end=5.60, size = 0.1) # Creating list to use in plot-ly later on. Set start and end of xaxis and the size of the bars
+
+p.before <- plot_ly(alpha = 0.5) %>% # how Opacity
+  add_histogram(x = x_st.wage.before.nj, 
+                  xbins = xbins, # list from earlier
+                  histnorm = "percent", # unit
+                  name = "Wage Before (New Jersey)") %>% # add label
+  add_histogram(x = x_st.wage.before.pa, 
+                  xbins = xbins, # list from earlier
+                  histnorm = "percent", # unit
+                  name = "Wage Before (Pennsylvania)") %>% # add label
+  layout(barmode = "group", title = "February 1992",
+           xaxis = list(tickvals=seq(4.25, 5.55, 0.1), # tick values of the x-axis
+                        title = "Wage in $ per hour", # add title
+                        tickangle = 90), # angle of the tick
+           yaxis = list(range = c(0, 100)), # tick values of the y-axis
+                      margin = list(b = 100, 
+                          l = 80, 
+                          r = 80, 
+                          t = 80, 
+                          pad = 0, 
+                          autoexpand = TRUE))
+
+
+p.before
+
+###################################################################################################
+
+## Creating specific objects for starter wage before respectively for nj and pa
+
+x_st.wage.after.nj <- df$x_st.wage.after[df$d_nj == 1]
+x_st.wage.after.pa <- df$x_st.wage.after[df$d_pa == 1]
+
+###################################################################################################
+
+## Plot for wage after treatment
+
+p.after <- plot_ly(alpha = 0.5) %>% # how opac
+  add_histogram(x = x_st.wage.after.nj, 
+                  xbins = xbins, # list from earlier
+                  histnorm = "percent", # unit
+                  name = "Wage After (New Jersey)") %>% # add label
+  add_histogram(x = x_st.wage.after.pa, 
+                  xbins = xbins, # list from earlier
+                  histnorm = "percent", # unit
+                  name = "Wage After (Pennsylvania)") %>% # add label
+  layout(barmode = "group", title = "November 1992",
+           xaxis = list(tickvals=seq(4.25, 5.55, 0.1), # tick values of the xaxis
+                        title = "Wage in $ per hour", # add title
+                        tickangle = 90), # angle of the tick
+           yaxis = list(range = c(0, 100)),  # tick values of the yaxis
+                      margin = list(b = 100, 
+                          l = 80, 
+                          r = 80, 
+                          t = 80, 
+                          pad = 0,
+                          autoexpand = TRUE))
+
+p.after
+```
+
+```{r Table 3 - Average Employment per store before and after the raise, echo=FALSE}
+
+# Sophie
+#select data frame
+
+  df <- df %>% dplyr::select(x_id,
+                         y_fte.before,
+                         y_fte.after,
+                         d_nj,
+                         x_bk,
+                         x_kfc,
+                         x_roys,
+                         x_wendys,
+                         x_co.owned,
+                         x_st.wage.before,
+                         x_st.wage.after,
+                         x_status.sec.interview,
+                         x_south.j,
+                         x_central.j,
+                         x_northeast.pa,
+                         x_easton.pa, 
+                         x_store.name
+                         )
+
+# Table 3: Column 1-3, from left to right)
+
+## 1st row: MEANs and SEs across subgroups
+  
+results.state.r1 <- df %>% 
+            group_by(d_nj) %>% # group_by the treatment variable
+            dplyr::select(d_nj, y_fte.before) %>% # only keep variable of interest - here dummy for state and employment for first time point (before treatment)
+            group_by(N = n(), .add = TRUE) %>% # count number of rows
+            summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
+            mutate(n = N - na_sum) %>% # number of observations without na
+            mutate(se = sqrt(var/n)) # standard error
+
+# Add row with differences
+  results.state.r1 <- bind_rows(results.state.r1, results.state.r1[2,]-results.state.r1[1,])
+  
+  kable(results.state.r1, digits=2)
+
+# Calculate SE for difference: SE = SQR(VAR/N + VAR/N)
+  diff_se.state.r1 <- sqrt(results.state.r1$var[1]/results.state.r1$n[1] + results.state.r1$var[2]/results.state.r1$n[2])
+  diff_se.state.r1
+  
+####################################################################################################
+  
+## 2nd row: MEANs and SEs across subgroups
+  
+results.state.r2 <- df %>% 
+            group_by(d_nj) %>% # group_by the treatment variable
+            dplyr::select(d_nj, y_fte.after) %>% # only keep variable of interest - here dummy for state and employment for second time point (after treatment)
+            group_by(N = n(), .add = TRUE) %>% # count number of rows
+            summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
+            mutate(n = N - na_sum) %>%  # number of observations without na
+            mutate(se = sqrt(var/n)) # standard error
+
+   
+# Add row with differences
+  results.state.r2 <- bind_rows(results.state.r2, results.state.r2[2,]-results.state.r2[1,])
+
+  kable(results.state.r2, digits=2)
+  
+####################################################################################################
+  
+## 3rd row: Change in MEANs and SEs between both time points
+
+  results.state.r3 <- bind_rows(results.state.r1, results.state.r2) # add prior tables together
+  results.state.r3 <- bind_rows(results.state.r3, results.state.r3[4,]-results.state.r3[1,]) # calculate the difference between row 1 and 4
+  results.state.r3 <- bind_rows(results.state.r3, results.state.r3[5,]-results.state.r3[2,]) # calculate the difference between row 2 and 5
+  results.state.r3 <- bind_rows(results.state.r3, results.state.r3[6,]-results.state.r3[3,]) # calculate the difference between row 3 and 6
+  results.state.r3$label<- c("Control (Pennsylvania) - before", "Treatment (New Jersey) - before", "Difference - before", "Control (Pennsylvania) - after", "Treatment (New Jersey) - after", "Difference - after", "Control (Pennsylvania) - Change FTE", "Treatment (New Jersey) - Change FTE", "Difference - Change FTE") # add column with labels
+  
+  kable(results.state.r3, digits=2)  
+  
+####################################################################################################
+  
+## 4th row: Change in MEANs and SEs between both time points, balanced sample
+  
+
+# Filter observations in both waves
+  df.balanced <- df %>% na.omit
+    
+# Filter complete cases across all columns
+  df.balanced <- df %>% filter(complete.cases(.)) 
+
+# Means time point 1
+  
+resultsb.state.r4.before <- df.balanced %>% 
+            group_by(d_nj) %>% # group_by the treatment variable
+            dplyr::select(d_nj, y_fte.before) %>% # only keep variable of interest
+            group_by(N = n(), .add = TRUE) %>% # count number of rows
+            summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
+            mutate(n = N - na_sum) %>% # number of observations without na
+            mutate(se = sqrt(var/n)) # standard error
+
+# Add row with differences
+  resultsb.state.r4.before <- bind_rows(resultsb.state.r4.before, resultsb.state.r4.before[2,]-resultsb.state.r4.before[1,])
+  
+  kable(resultsb.state.r4.before, digits=2)
+
+# Means time point 2
+  
+resultsb.state.r4.after <- df.balanced %>% 
+            group_by(d_nj) %>% # group_by the treatment variable
+            dplyr::select(d_nj, y_fte.after) %>% # only keep variable of interest 
+            group_by(N = n(), .add = TRUE) %>% # count number of rows
+            summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
+            mutate(n = N - na_sum) %>% # number of observations without na
+            mutate(se = sqrt(var/n)) # standard error
+
+   
+# Add row with differences
+  resultsb.state.r4.after <- bind_rows(resultsb.state.r4.after, resultsb.state.r4.after[2,]-resultsb.state.r4.after[1,])
+
+  kable(resultsb.state.r4.after, digits=2)
+  
+# Mean Differences for complete row 4
+  
+results.state.r4 <- bind_rows(resultsb.state.r4.before, resultsb.state.r4.after) # add prior tables together
+  results.state.r4 <- bind_rows(results.state.r4, results.state.r4[4,]-results.state.r4[1,]) # calculate the difference between row 1 and 4
+  results.state.r4 <- bind_rows(results.state.r4, results.state.r4[5,]-results.state.r4[2,]) # calculate the difference between row 2 and 5
+  results.state.r4 <- bind_rows(results.state.r4, results.state.r4[6,]-results.state.r4[3,]) # calculate the difference between row 3 and 6
+  results.state.r4$label <- c("Control (Pennsylvania) - before (Balanced)", "Treatment (New Jersey) - before (Balanced)", "Difference - before (Balanced)", "Control (Pennsylvania) - after (Balanced)", "Treatment (New Jersey) - after (Balanced)", "Difference - after (Balanced)", "Control (Pennsylvania) - Change FTE (Balanced)", "Treatment (New Jersey) - Change FTE (Balanced)", "Difference - Change FTE (Balanced)") # add column with labels
+  
+  kable(results.state.r4, digits=2)  
+  
+####################################################################################################
+  
+## 5th row: Change in MEANs and SEs between both time points, permanently closed set to 0
+  
+# Create a new variable where permanently closed stores have a FTE of 0
+df$y_fte.after.closed <- df$y_fte.after
+df$y_fte.after.closed[df$x_status.sec.interview == 3] <- 0
+    
+# Filter complete cases across all columns
+df.closed <- df %>% filter(complete.cases(.)) 
+    
+# Before Treatment
+
+resultsc.state.r5.before <- df.closed %>% 
+            group_by(d_nj) %>% # group_by the treatment variable
+            dplyr::select(d_nj, y_fte.before) %>% # only keep variable of interest
+            group_by(N = n(), .add = TRUE) %>% # count number of rows
+            summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
+            mutate(n = N - na_sum) %>% # number of observations without na
+            mutate(se = sqrt(var/n)) # standard error
+
+# Add row with differences
+  resultsc.state.r5.before <- bind_rows(resultsc.state.r5.before, resultsc.state.r5.before[2,]-resultsc.state.r5.before[1,])
+  kable(resultsc.state.r5.before, digits=2)
+
+# After Treatment
+  
+resultsc.state.r5.after <- df.closed %>% 
+            group_by(d_nj) %>% # group_by the treatment variable
+            dplyr::select(d_nj, y_fte.after.closed) %>% # only keep variable of interest 
+            group_by(N = n(), .add = TRUE) %>% # count number of rows
+            summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
+            mutate(n = N - na_sum) %>% # number of observations without na
+            mutate(se = sqrt(var/n)) # standard error
+
+   
+# Add row with differences
+  resultsc.state.r5.after <- bind_rows(resultsc.state.r5.after, resultsc.state.r5.after[2,]-resultsc.state.r5.after[1,])
+  kable(resultsc.state.r5.after, digits=2)
+  
+# Compare all the results and add the difference between them. 
+   
+results.state.r5 <- bind_rows(resultsc.state.r5.before, resultsc.state.r5.after) # add prior tables together
+  results.state.r5 <- bind_rows(results.state.r5, results.state.r5[4,]-results.state.r5[1,]) # calculate the difference between row 1 and 4
+  results.state.r5 <- bind_rows(results.state.r5, results.state.r5[5,]-results.state.r5[2,]) # calculate the difference between row 2 and 5
+  results.state.r5 <- bind_rows(results.state.r5, results.state.r5[6,]-results.state.r5[3,]) # calculate the difference between row 3 and 6
+  results.state.r5$label<- c("Control (Pennsylvania) - after (Closed)", "Treatment (New Jersey) - after (Closed)", "Difference - after (Closed)", "Control (Pennsylvania) - Before (Closed)", "Treatment (New Jersey) - Before (Closed)", "Difference - Before (Closed)", "Control (Pennsylvania) - Change FTE (Closed)", "Treatment (New Jersey)- Change FTE (Closed)", "Difference - Change FTE (Closed)") # add column with labels
+  
+  kable(results.state.r5, digits=2)    
+
+####################################################################################################
+  
+# Complete Columns
+  
+results.state <- bind_rows(results.state.r3, results.state.r4, results.state.r5)
+  
+results.state <- results.state[-c(10, 11, 12, 13, 14, 15, 19, 20, 21, 22, 23, 24), ] # delete rows we do not need
+results.state <- results.state[, -c(1, 2, 4, 5, 6)] # delete columns we do not need
+#results.state$label<- c("PA", "NJ", "Difference", "PA", "NJ", "Difference", "PA", "NJ", "Difference", "PA", "NJ", "Difference", "PA", "NJ", "Difference")
+colnames(results.state) <- c("Mean", "SE", "label")
+results.state
+
+```
+
+```{r Table 3 - Average Employment per store before and after the raise, column 4-6, echo=FALSE}
+
+# Sophie 
+
+### Table 3: Column 4-6, Row 1 (from left to right)
+
+## 1st row: FTE before Treatment
+
+# Column 4
+
+results.r1.c4 <- df %>%
+  group_by(d_nj) %>% # group by the state
+  filter(d_nj == 1 & x_st.wage.before == 4.25) %>% # filter for only new jersey and also wage = 4.25
+  dplyr::select(y_fte.before) %>% # select only necessary variables
+  group_by(N = n()) %>% # group by number of observations
+  summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
+  mutate(n = N - y_fte.before_na_sum) %>% 
+  mutate(se = sqrt(y_fte.before_var/n))
+
+colnames(results.r1.c4) <- c("N", "State Mean", "Mean", "State Var", "Var", "State na sum", "na sum", "N", "SE") # change column names
+
+# Column 5
+
+results.r1.c5 <- df %>%
+  group_by(d_nj) %>% # group by the state
+  filter(x_st.wage.before > 4.25 & x_st.wage.before < 5 & d_nj == 1) %>% # filter for only new jersey and also wage = 4.26 - 4.99
+  dplyr::select(y_fte.before) %>% # select only necessary variables
+  group_by(N = n()) %>% # group by number of observations
+  summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
+  mutate(n = N - y_fte.before_na_sum) %>% 
+  mutate(se = sqrt(y_fte.before_var/n))
+
+colnames(results.r1.c5) <- c("N", "State Mean", "Mean", "State Var", "Var", "State na sum", "na sum", "N", "SE") # change column names
+
+# Column 6
+
+results.r1.c6 <- df %>%
+  group_by(d_nj) %>% # group by the state
+  filter(x_st.wage.before > 4.99 & d_nj == 1) %>% # filter for only new jersey and also wage >= 5
+  dplyr::select(y_fte.before) %>% # select only necessary variables
+  group_by(N = n()) %>% # group by number of observations
+  summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
+  mutate(n = N - y_fte.before_na_sum) %>% 
+  mutate(se = sqrt(y_fte.before_var/n))
+
+colnames(results.r1.c6) <- c("N", "State Mean", "Mean", "State Var", "Var", "State na sum", "na sum", "N", "SE") # change column names
+
+# Combining all the results for row 1
+
+results.compare.r1 <- bind_rows(results.r1.c4, results.r1.c5, results.r1.c6)
+kable(results.compare.r1, digits=2)
+
+
+####################################################################################################
+
+## 2nd row: After treatment
+
+# Column 4
+
+results.r2.c4 <- df %>%
+  group_by(d_nj) %>% # group by the state
+  filter(d_nj == 1 & x_st.wage.before == 4.25) %>% # filter for only new jersey and also wage = 4.25
+  dplyr::select(y_fte.after) %>%  # select only necessary variables
+  group_by(N = n()) %>% # group by number of observations
+  summarize_all(funs(mean = mean, var = var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
+  mutate(n = N - y_fte.after_na_sum) %>% 
+  mutate(se = sqrt(y_fte.after_var/n))
+
+colnames(results.r2.c4) <- c("N", "State Mean", "Mean", "State Var", "Var", "State na sum", "na sum", "N", "SE") # change column names
+
+# Column 5 
+#something is wrong here
+
+results.r2.c5 <- df %>%
+  group_by(d_nj) %>% # group by the state
+  filter(x_st.wage.before > 4.25 & x_st.wage.before < 5 & d_nj == 1) %>% # filter for only new jersey and also wage = 4.26 - 4.99
+  dplyr::select(y_fte.after) %>% # select only necessary variables
+  group_by(N = n()) %>% # group by number of observations
+  summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
+  mutate(n = N - y_fte.after_na_sum) %>% 
+  mutate(se = sqrt(y_fte.after_var/n))
+
+colnames(results.r2.c5) <- c("N", "State Mean", "Mean", "State Var", "Var", "State na sum", "na sum", "N", "SE") # change column names
+
+# Column 6
+#something is wrong here
+
+results.r2.c6 <- df %>%
+  group_by(d_nj) %>% # group by the state
+  filter(x_st.wage.before > 4.99 & d_nj == 1) %>% # filter for only new jersey and also wage >= 5.00
+  dplyr::select(y_fte.after) %>% # select only necessary variables
+  group_by(N = n()) %>% # group by number of observations
+  summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
+  mutate(n = N - y_fte.after_na_sum) %>% 
+  mutate(se = sqrt(y_fte.after_var/n))
+
+colnames(results.r2.c6) <- c("N", "State Mean", "Mean", "State Var", "Var", "State na sum", "na sum", "N", "SE") # change column names
+
+# Combining all the results for row 1
+
+results.compare.r2 <- bind_rows(results.r2.c4, results.r2.c5, results.r2.c6)
+kable(results.compare.r2, digits=2)
+
+####################################################################################################
+
+## 3rd row: After treatment
+
+results.compare.r3 <- bind_rows(results.compare.r2, results.compare.r1)
+  results.compare.r3 <- bind_rows(results.compare.r3, results.compare.r3[4,]-results.compare.r3[1,])
+  results.compare.r3 <- bind_rows(results.compare.r3, results.compare.r3[5,]-results.compare.r3[2,])
+  results.compare.r3 <- bind_rows(results.compare.r3, results.compare.r3[6,]-results.compare.r3[3,])
+  results.compare.r3$group<- c()
+  kable(results.compare.r3, digits=2) 
+  
+####################################################################################################  
+  
+## 4th row: Change in mean FTE in balanced sample
+  
+# create a balanced data set
+  
+  df.balanced <- df %>% filter(complete.cases(.))   
+  
+# Column 4 
+  
+  resultsb.r1.c4 <- df.balanced %>%
+  group_by(d_nj) %>% # group by the state
+  filter(d_nj == 1 & x_st.wage.before == 4.25) %>% # filter for only new jersey and also wage = 4.25
+  dplyr::select(y_fte.before) %>% # select only necessary variables
+  group_by(N = n()) %>% # group by number of observations
+  summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
+  mutate(n = N - y_fte.before_na_sum) %>% 
+  mutate(se = sqrt(y_fte.before_var/n))
+  
+colnames(resultsb.r1.c4) <- c("N", "State Mean", "Mean", "State Var", "Var", "State na sum", "na sum", "N", "SE") # change column names
+
+# Column 5
+
+resultsb.r1.c5 <- df.balanced %>%
+  group_by(d_nj) %>% # group by the state
+  filter(x_st.wage.before > 4.25 & x_st.wage.before < 5 & d_nj == 1) %>% # filter for only new jersey and also wage = 4.26 - 4.99
+  dplyr::select(y_fte.before) %>% # select only necessary variables
+  group_by(N = n()) %>% # group by number of observations
+  summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
+  mutate(n = N - y_fte.before_na_sum) %>% 
+  mutate(se = sqrt(y_fte.before_var/n))
+
+colnames(resultsb.r1.c5) <- c("N", "State Mean", "Mean", "State Var", "Var", "State na sum", "na sum", "N", "SE") # change column names
+
+# Column 6
+
+resultsb.r1.c6 <- df.balanced %>%
+  group_by(d_nj) %>% # group by the state
+  filter(x_st.wage.before >= 5 & d_nj == 1) %>% # filter for only new jersey and also wage >= 5.00
+  dplyr::select(y_fte.before) %>% # select only necessary variables
+  group_by(N = n()) %>% # group by number of observations
+  summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
+  mutate(n = N - y_fte.before_na_sum) %>% 
+  mutate(se = sqrt(y_fte.before_var/n))
+
+colnames(resultsb.r1.c6) <- c("N", "State Mean", "Mean", "State Var", "Var", "State na sum", "na sum", "N", "SE") # change column names
+
+# Combining all the results for row 1
+
+resultsb.compare.r1 <- bind_rows(resultsb.r1.c4, resultsb.r1.c5, resultsb.r1.c6)
+kable(resultsb.compare.r1, digits=2)
+
+
+## Second row: After treatment
+
+# Column 4
+
+resultsb.r2.c4 <- df.balanced %>%
+  group_by(d_nj) %>% # group by the state
+  filter(d_nj == 1 & x_st.wage.before == 4.25) %>% # filter for only new jersey and also wage = 4.25
+  dplyr::select(y_fte.after) %>% # select only necessary variables
+  group_by(N = n()) %>% # group by number of observations
+  summarize_all(funs(mean = mean, var = var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
+  mutate(n = N - y_fte.after_na_sum) %>% 
+  mutate(se = sqrt(y_fte.after_var/n))
+
+colnames(resultsb.r2.c4) <- c("N", "State Mean", "Mean", "State Var", "Var", "State na sum", "na sum", "N", "SE") # change column names
+
+# Column 5 
+#something is wrong here
+
+resultsb.r2.c5 <- df.balanced %>%
+  group_by(d_nj) %>% # group by the state
+  filter(x_st.wage.before > 4.25 & x_st.wage.before < 5 & d_nj == 1) %>% # filter for only new jersey and also wage = 4.26 - 4.99
+  dplyr::select(y_fte.after) %>% # select only necessary variables
+  group_by(N = n()) %>% # group by number of observations
+  summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
+  mutate(n = N - y_fte.after_na_sum) %>% 
+  mutate(se = sqrt(y_fte.after_var/n))
+
+colnames(resultsb.r2.c5) <- c("N", "State Mean", "Mean", "State Var", "Var", "State na sum", "na sum", "N", "SE") # change column names
+
+# Column 6
+#something is wrong here
+
+resultsb.r2.c6 <- df.balanced %>%
+  group_by(d_nj) %>% # group by the state
+  filter(x_st.wage.before > 4.99 & d_nj == 1) %>% # filter for only new jersey and also wage >= 5.00
+  dplyr::select(y_fte.after) %>% # select only necessary variables
+  group_by(N = n()) %>% # group by number of observations
+  summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
+  mutate(n = N - y_fte.after_na_sum) %>% 
+  mutate(se = sqrt(y_fte.after_var/n))
+
+colnames(resultsb.r2.c6) <- c("N", "State Mean", "Mean", "State Var", "Var", "State na sum", "na sum", "N", "SE") # change column names
+
+# Combining all the results for row 1
+
+resultsb.compare.r2 <- bind_rows(resultsb.r2.c4, resultsb.r2.c5, resultsb.r2.c6)
+kable(resultsb.compare.r2, digits=2)
+
+## Third row: After treatment
+# suddenly some rows have nas, i dont now why!
+
+results.compare.r4 <- bind_rows(resultsb.compare.r2, resultsb.compare.r1)
+  results.compare.r4 <- bind_rows(results.compare.r4, results.compare.r4[4,]-results.compare.r4[1,])
+  results.compare.r4 <- bind_rows(results.compare.r4, results.compare.r4[5,]-results.compare.r4[2,])
+  results.compare.r4 <- bind_rows(results.compare.r4, results.compare.r4[6,]-results.compare.r4[3,])
+  results.compare.r4$group<- c()
+  kable(results.compare.r4, digits=2) 
+ 
+####################################################################################################
+  
+# 5th Rows: Permanantely closed = 0
+  
+# Create a new variable where permanently closed stores have a FTE of 0
+df$y_fte.after.closed <- df$y_fte.after
+df$y_fte.after.closed[df$x_status.sec.interview == 3] <- 0
+    
+# Filter complete cases across all columns
+df.closed <- df %>% filter(complete.cases(.))
+
+## Before Treatment Means
+# Column 4 
+  
+  resultsc.r1.c4 <- df.closed %>%
+  group_by(d_nj) %>% # group by the state
+  filter(d_nj == 1 & x_st.wage.before == 4.25) %>% # filter for only new jersey and also wage = 4.25
+  dplyr::select(y_fte.before) %>% # select only necessary variables
+  group_by(N = n()) %>% # group by number of observations
+  summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
+  mutate(n = N - y_fte.before_na_sum) %>% 
+  mutate(se = sqrt(y_fte.before_var/n))
+
+colnames(resultsc.r1.c4) <- c("N", "State Mean", "Mean", "State Var", "Var", "State na sum", "na sum", "N", "SE") # change column names
+
+# Column 5
+
+resultsc.r1.c5 <- df.closed %>%
+  group_by(d_nj) %>% # group by the state
+  filter(x_st.wage.before > 4.25 & x_st.wage.before < 5 & d_nj == 1) %>% # filter for only new jersey and also wage = 4.26 - 4.99
+  dplyr::select(y_fte.before) %>% # select only necessary variables
+  group_by(N = n()) %>% # group by number of observations
+  summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
+  mutate(n = N - y_fte.before_na_sum) %>% 
+  mutate(se = sqrt(y_fte.before_var/n))
+
+colnames(resultsc.r1.c5) <- c("N", "State Mean", "Mean", "State Var", "Var", "State na sum", "na sum", "N", "SE") # change column names
+
+# Column 6
+
+resultsc.r1.c6 <- df.closed %>%
+  group_by(d_nj) %>% # group by the state
+  filter(x_st.wage.before >= 5 & d_nj == 1) %>% # filter for only new jersey and also wage >= 5.00
+  dplyr::select(y_fte.before) %>% # select only necessary variables
+  group_by(N = n()) %>% # group by number of observations
+  summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
+  mutate(n = N - y_fte.before_na_sum) %>% 
+  mutate(se = sqrt(y_fte.before_var/n))
+
+colnames(resultsc.r1.c6) <- c("N", "State Mean", "Mean", "State Var", "Var", "State na sum", "na sum", "N", "SE") # change column names
+
+# Combining all the results for row 1
+
+resultsc.compare.r1 <- bind_rows(resultsc.r1.c4, resultsc.r1.c5, resultsc.r1.c6)
+kable(resultsc.compare.r1, digits=2)
+
+
+## After Treatment Means
+# Column 4
+
+resultsc.r2.c4 <- df.closed %>%
+  group_by(d_nj) %>% # group by the state
+  filter(d_nj == 1 & x_st.wage.before == 4.25) %>% # filter for only new jersey and also wage = 4.25
+  dplyr::select(y_fte.after.closed) %>% # select only necessary variables
+  group_by(N = n()) %>% # group by number of observations
+  summarize_all(funs(mean = mean, var = var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
+  mutate(n = N - y_fte.after.closed_na_sum) %>% 
+  mutate(se = sqrt(y_fte.after.closed_var/n))
+
+colnames(resultsc.r2.c4) <- c("N", "State Mean", "Mean", "State Var", "Var", "State na sum", "na sum", "N", "SE") # change column names
+
+# Column 5 
+
+resultsc.r2.c5 <- df.closed %>%
+  group_by(d_nj) %>% # group by the state
+  filter(x_st.wage.before > 4.25 & x_st.wage.before < 5 & d_nj == 1) %>% # filter for only new jersey and also wage = 4.26 - 4.99
+  dplyr::select(y_fte.after.closed) %>% # select only necessary variables
+  group_by(N = n()) %>% # group by number of observations
+  summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
+  mutate(n = N - y_fte.after.closed_na_sum) %>% 
+  mutate(se = sqrt(y_fte.after.closed_var/n))
+
+colnames(resultsc.r2.c5) <- c("N", "State Mean", "Mean", "State Var", "Var", "State na sum", "na sum", "N", "SE") # change column names
+
+# Column 6
+
+resultsc.r2.c6 <- df.closed %>%
+  group_by(d_nj) %>% # group by the state
+  filter(x_st.wage.before > 4.99 & d_nj == 1) %>% # filter for only new jersey and also wage >= 5.00
+  dplyr::select(y_fte.after.closed) %>% # select only necessary variables
+  group_by(N = n()) %>% # group by number of observations
+  summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
+  mutate(n = N - y_fte.after.closed_na_sum) %>% 
+  mutate(se = sqrt(y_fte.after.closed_var/n))
+
+colnames(resultsc.r2.c6) <- c("N", "State Mean", "Mean", "State Var", "Var", "State na sum", "na sum", "N", "SE", "Label") # change column names
+
+# Combining all the results for row 1
+
+resultsc.compare.r2 <- bind_rows(resultsc.r2.c4, resultsc.r2.c5, resultsc.r2.c6)
+kable(resultsc.compare.r2, digits=2)
+
+# mean differences
+
+results.compare.r5 <- bind_rows(resultsc.compare.r2, resultsc.compare.r1)
+  results.compare.r5 <- bind_rows(results.compare.r5, results.compare.r5[4,]-results.compare.r5[1,])
+  results.compare.r5 <- bind_rows(results.compare.r5, results.compare.r5[5,]-results.compare.r5[2,])
+  results.compare.r5 <- bind_rows(results.compare.r5, results.compare.r5[6,]-results.compare.r5[3,])
+  results.compare.r5$group<- c()
+  kable(results.compare.r5, digits=2) 
+  
+####################################################################################################
+  
+# Combining everything
+  
+results.compare.r1$label <- c("Wage = $4.25 (before)", "Wage = $4.26 - $4.99 (before)", "Wage >= $5.00 (before)")
+results.compare.r2$label <- c("Wage = $4.25 (after)", "Wage = $4.26 - $4.99 (after)", "Wage >= $5.00 (after)")
+results.compare.r3$label <- c("-", "-", "-", "-", "-", "-", "Wage = $4.25 (Change FTE)", "Wage = $4.26 - $4.99 (Change FTE)", "Wage >= $5.00 (Change FTE)")
+results.compare.r4$label <- c("-", "-", "-", "-", "-", "-", "Wage = $4.25 (Change FTE - balanced)", "Wage = $4.26 - $4.99 Wage = $4.25 (Change FTE - balanced)", "Wage >= $5.00 Wage = $4.25 (Change FTE - balanced)")
+results.compare.r5$label <- c("-", "-", "-", "-", "-", "-", "Wage = $4.25 Wage = $4.25 (Change FTE - closed)", "Wage = $4.26 - $4.99 (Change FTE - closed)", "Wage >= $5.00 (Change FTE - closed)")
+
+results.stores <- bind_rows(results.compare.r1, results.compare.r2, results.compare.r3, results.compare.r4, results.compare.r5) # combining tables
+results.stores <- results.stores[, -c(1, 2, 4, 5, 6, 7, 8)] # delete columns we do not need
+results.stores <- results.stores[-c(7:12, 16:21, 25:30), ] # rows we do not need
+
+results.stores
+```
+
+```{r Table 3 - Average Employment per store before and after the raise, column 7-8, echo=FALSE}
+
+# Sophie 
+
+# Difference between Low and High & Mid-range and high
+
+# 1st row: Before Treatment
+
+results.low.r1 <- bind_rows(results.compare.r1, results.compare.r1[3,3]-results.compare.r1[1,3]) # mean difference between low and high
+results.low.r1[4,9] <- results.compare.r1[3,9]-results.compare.r1[1,9] # se difference between low and high
+results.low.r1 <- bind_rows(results.low.r1, results.compare.r1[3,3]-results.compare.r1[2,3]) # mean difference between midrange and high
+results.low.r1[5,9] <- results.compare.r1[3,9]-results.compare.r1[2,9] # se difference between low and high
+kable(results.low.r1, digits=2)
+nhi bhai, apna chuck ,,, mera dil ......kuch khany ka dil kr rha h
+####################################################################################################
+
+# 2nd row: After Treatment
+
+results.low.r2 <- bind_rows(results.compare.r2, results.compare.r2[3,3]-results.compare.r2[1,3]) # mean difference between low and high
+results.low.r2[4,9] <- results.compare.r2[3,9]-results.compare.r2[1,9] # se difference between low and high
+results.low.r2 <- bind_rows(results.low.r2, results.compare.r2[3,3]-results.compare.r2[2,3]) # mean difference between midrange and high
+results.low.r2[5,9] <- results.compare.r2[3,9]-results.compare.r2[2,9] # se difference between low and high
+kable(results.low.r2, digits=2)
+
+####################################################################################################
+
+# 3rd row: Change in Mean of FTE 
+
+results.low.r3 <- bind_rows(results.compare.r3, results.compare.r3[9,3]-results.compare.r3[7,3]) # mean difference between low and high
+results.low.r3[10,9] <- results.compare.r3[9,9]-results.compare.r3[7,9] # se difference between low and high
+results.low.r3 <- bind_rows(results.low.r3, results.compare.r3[9,3]-results.compare.r3[8,3]) # mean difference between midrange and high
+results.low.r3[11,9] <- results.compare.r3[9,9]-results.compare.r3[8,9] # se difference between low and high
+kable(results.low.r3, digits=2)
+
+####################################################################################################
+
+# 4th row: Change in Mean of FTE in balanced sample
+
+
+results.low.r4 <- bind_rows(results.compare.r4, results.compare.r4[9,3]-results.compare.r4[7,3]) # mean difference between low and high
+results.low.r4[10,9] <- results.compare.r4[9,9]-results.compare.r4[7,9] # se difference between low and high
+results.low.r4 <- bind_rows(results.low.r4, results.compare.r4[9,3]-results.compare.r4[8,3]) # mean difference between midrange and high
+results.low.r4[11,9] <- results.compare.r4[9,9]-results.compare.r4[8,9] # se difference between low and high
+kable(results.low.r4, digits=2)
+
+####################################################################################################
+
+# 5th row: Change in Mean of FTE, closed stores = 0
+
+results.low.r5 <- bind_rows(results.compare.r5, results.compare.r5[9,3]-results.compare.r5[7,3]) # mean difference between low and high
+results.low.r5[10,9] <- results.compare.r5[9,9]-results.compare.r5[7,9] # se difference between low and high
+results.low.r5 <- bind_rows(results.low.r5, results.compare.r5[9,3]-results.compare.r5[8,3]) # mean difference between midrange and high
+results.low.r5[11,9] <- results.compare.r5[9,9]-results.compare.r5[8,9] # se difference between low and high
+kable(results.low.r5, digits=2)
+
+####################################################################################################
+
+# Combining all the rows
+
+results.low <- bind_rows(results.low.r1, results.low.r2, results.low.r3, results.low.r4, results.low.r5)
+results.low <- results.low[, -c(1, 2, 4, 5, 6, 7, 8)] # delete columns we do not need
+results.low <- results.low[-c(1:3, 6:8, 11:19, 22:30, 33:41), ] # delete columns we do not need
+results.low$label <- c("Low-High (before)", "Midrange-High (before)", "Low-High (after)", "Midrange-High (after)", "Low-High (Change FTE)", "Midrange-High (Change FTE)", "Low-High (Change FTE - Balanced)", "Midrange-High (Change FTE - Balanced)",  "Low-High (Change FTE - closed)", "Midrange-High (Change FTE - closed)") # add column with labels
+results.low
+
+```
+
+```{r Table 3 - Average Employment per store before and after the raise, echo=FALSE}
+
+### Complete Table 3
+
+table3 <- full_join(results.state, results.stores) # joining all three tables
+table3 <- full_join(table3, results.low)
+
+table3
+
+```
+
+```{r Table 4 - Reduced Form Models for change in employment, echo=FALSE}
+
+# Sophie 
+
+### Table 4 - Reduced Form Models for change in employment
+
+## First select you data set, with which you want to work
+
+ df2 <- dplyr::select(df,x_id,
+                         y_fte.before,
+                         y_fte.after,
+                         d_nj,
+                         x_bk,
+                         x_kfc,
+                         x_roys,
+                         x_wendys,
+                         x_co.owned,
+                         x_st.wage.before,
+                         x_st.wage.after,
+                         x_status.sec.interview,
+                         x_south.j,
+                         x_central.j,
+                         x_northeast.pa,
+                         x_easton.pa,
+                         x_store.name) %>%
+           mutate(x_st.wage.after = case_when(x_status.sec.interview == 3 ~ NA_character_, # these stores get an NA
+                                              TRUE ~ as.character(x_st.wage.after)),
+                  x_st.wage.after = as.numeric(x_st.wage.after)) %>%
+                  na.omit()
+
+## Model (i)/Column 1: Base
+
+  fit.c1 <- lm((y_fte.after-y_fte.before) ~ d_nj, # linear model on differences of FTE
+             data = df2)
+  summary(fit.c1)
+
+####################################################################################################
+  
+## Model (ii)/Column 2: Controls Chain/Ownership
+  
+  fit.c2 <- lm((y_fte.after-y_fte.before) ~ 
+               d_nj + x_bk + x_kfc + x_roys + x_co.owned,  # linear model on differences of FTE with controls
+             data = df2)
+  summary(fit.c2)
+  
+####################################################################################################
+  
+## Model (iii)/Column 3: Initial Wage gap - no controls
+  
+ 
+# Initial wage gap: Proportional increase in starting wage necessary to raise starting wage to new minimum wage (new wage of the store) (For PA the wage gap is 0)
+  
+for(i in 1:nrow(df2)){
+  df2$d_ini.wage.gap[i] <- 100 - ((df2$x_st.wage.before[i] * 100)/df2$x_st.wage.after[i])  
+}
+df2$d_ini.wage.gap[df2$d_nj == 0] <- 0
+
+
+# Initial wage gap: Proportional increase in starting wage necessary to raise starting wage to new minimum wage (new minimum wage 5.05) (For PA the wage gap is 0)
+
+for(i in 1:nrow(df2)){
+  df2$d_ini.wage.gap1[i] <- 100 - ((df2$x_st.wage.before[i] * 100)/5.05)
+}  
+df2$d_ini.wage.gap1[df2$d_nj == 0] <- 0
+
+# Initial wage gap: Proportional increase in starting wage necessary to raise starting wage to new minimum wage (new minimum wage 5.05) (For PA the wage gap is 0) Scale 1-0
+
+for(i in 1:nrow(df2)){
+  df2$d_ini.wage.gap2[i] <- (5.05/df2$x_st.wage.before[i])
+}
+df2$d_ini.wage.gap2[df2$d_nj == 0] <- 0
+
+
+# then linear model/regression
+  
+  fit.c3 <- lm((y_fte.after-y_fte.before) ~  
+               d_ini.wage.gap2, 
+             data = df2)
+  summary(fit.c3)
+
+####################################################################################################
+  
+## Model (iv)/Column 4: Initial Wage gap - Controls Chain/Ownership
+  
+  fit.c4 <- lm((y_fte.after-y_fte.before) ~ 
+               d_ini.wage.gap2 + x_bk + x_kfc + x_roys + x_co.owned, 
+             data = df2)
+  summary(fit.c4)  
+
+####################################################################################################
+  
+## Model (iv)/Column 5: Initial Wage gap - Controls Chain/Ownership + Regions 
+  
+  fit.c5 <- lm((y_fte.after-y_fte.before) ~ 
+               d_ini.wage.gap2 + x_bk + x_kfc + x_roys + x_co.owned + x_south.j + x_central.j + x_northeast.pa + x_easton.pa, 
+             data = df2)
+  summary(fit.c5)  
+  
+```
+
+```{r Table 5 - Specification tests of reduced form employment models, echo=FALSE}
+
+# Khizer
+
+
+```
+
+```{r Matching, echo=FALSE}
+
+# Sophie 
+
+## Data into long format
+
+ df3 <- dplyr::select(df2,
+                         x_id,
+                         y_fte.before,
+                         y_fte.after,
+                         d_nj,
+                         x_bk,
+                         x_kfc,
+                         x_roys, 
+                         x_wendys,
+                         x_south.j,
+                         x_central.j,
+                         x_northeast.pa,
+                         x_easton.pa,
+                         x_store.name)
+
+data_long <- gather(df3, time, FTE, y_fte.before:y_fte.after, factor_key=TRUE)
+
+data_long$time <- gsub("y_fte.before", 0, data_long$time)
+data_long$time <- gsub("y_fte.after", 1, data_long$time)
+data_long
+
+## Gen matching
+
+# 1. Perform genetic matching
+
+gen.matched <- GenMatch(X = cbind(data_long$x_bk, data_long$x_kfc, data_long$x_roys, data_long$x_wendys),
+                        Tr = data_long$d_nj)
+
+gen.results <- Match(X = cbind(data_long$x_bk, data_long$x_kfc, data_long$x_roys, data_long$x_wendys),
+               Tr = data_long$d_nj,
+               Weight.matrix = gen.matched)
+
+# 2. Check balance
+
+MatchBalance(data_long$d_nj ~ data_long$x_bk + data_long$x_kfc + data_long$x_roys + data_long$x_wendys,
+            match.out = gen.results,
+            data = data_long)
+
+# 3. Estimate the treatment effect
+
+gen.results <- Match(X = cbind(data_long$x_bk, data_long$x_kfc, data_long$x_roys, data_long$x_wendys),
+               Tr = data_long$d_nj,
+               Y = data_long$FTE,
+               Weight.matrix = gen.matched)
+
+summary(gen.results)
+
+## Exact matching
+
+# 1. Perform exact matching on selected variables
+
+matching.exact <- Match(X = cbind(data_long$x_bk, data_long$x_kfc, data_long$x_roys, data_long$x_wendys),
+               Tr = data_long$d_nj,
+               exact = TRUE,
+               estimand = "ATT")
+
+summary(matching.exact)
+
+# 2. Check balance
+
+MatchBalance(d_nj ~ x_bk + x_kfc + x_roys + x_wendys,
+            match.out = matching.exact,
+            data = data_long)
+
+# 3. Estimate the treatment effect
+
+matching.exact <- Match(X = cbind(data_long$x_bk, data_long$x_kfc, data_long$x_roys, data_long$x_wendys),
+               Tr = data_long$d_nj,
+               Y =  data_long$FTE,
+               exact = TRUE,
+               estimand = "ATT")
+
+summary(matching.exact) # same results
+summary(gen.results)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
