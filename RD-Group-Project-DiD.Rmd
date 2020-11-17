@@ -322,7 +322,7 @@ count.w1 <- count.w1%>% add_row(All = 63, NJ = 33, PA = 30) # add row - second r
 
 ## Final Layout
 
-count.w1$wave1 <- c("Number Interview", "Number of refusals", "Number of Stores in Sample Frame","Response Rate (percentage)") # add variable with labels
+count.w1$wave1 <- c("Number Interview", "Response Rate (percentage)", "Number of Stores in Sample Frame","Number of refusals") # add variable with labels
 
 count.w1 <- count.w1[c(3, 4, 1, 2),] # change the order of rows
 count.w1 <- count.w1[,c(4, 1, 2, 3)] # change the order of columns
@@ -430,7 +430,7 @@ x_st.wage.before.pa <- df$x_st.wage.before[df$d_pa == 1]
 # Set histogram bins
 xbins <- list(start=4.20, end=5.60, size = 0.1) # Creating list to use in plot-ly later on. Set start and end of xaxis and the size of the bars
 
-p.before <- plot_ly(alpha = 0.5) %>% # how opac
+p.before <- plot_ly(alpha = 0.5) %>% # how Opacity
   add_histogram(x = x_st.wage.before.nj, 
                   xbins = xbins, # list from earlier
                   histnorm = "percent", # unit
@@ -440,10 +440,10 @@ p.before <- plot_ly(alpha = 0.5) %>% # how opac
                   histnorm = "percent", # unit
                   name = "Wage Before (Pennsylvania)") %>% # add label
   layout(barmode = "group", title = "February 1992",
-           xaxis = list(tickvals=seq(4.25, 5.55, 0.1), # tick values of the xaxis
+           xaxis = list(tickvals=seq(4.25, 5.55, 0.1), # tick values of the x-axis
                         title = "Wage in $ per hour", # add title
                         tickangle = 90), # angle of the tick
-           yaxis = list(range = c(0, 100)), # tick values of the yaxis
+           yaxis = list(range = c(0, 100)), # tick values of the y-axis
                       margin = list(b = 100, 
                           l = 80, 
                           r = 80, 
@@ -968,11 +968,11 @@ kable(resultsc.compare.r1, digits=2)
 resultsc.r2.c4 <- df.closed %>%
   group_by(d_nj) %>% # group by the state
   filter(d_nj == 1 & x_st.wage.before == 4.25) %>% # filter for only new jersey and also wage = 4.25
-  dplyr::select(y_fte.after) %>% # select only necessary variables
+  dplyr::select(y_fte.after.closed) %>% # select only necessary variables
   group_by(N = n()) %>% # group by number of observations
   summarize_all(funs(mean = mean, var = var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
-  mutate(n = N - y_fte.after_na_sum) %>% 
-  mutate(se = sqrt(y_fte.after_var/n))
+  mutate(n = N - y_fte.after.closed_na_sum) %>% 
+  mutate(se = sqrt(y_fte.after.closed_var/n))
 
 colnames(resultsc.r2.c4) <- c("N", "State Mean", "Mean", "State Var", "Var", "State na sum", "na sum", "N", "SE") # change column names
 
@@ -981,11 +981,11 @@ colnames(resultsc.r2.c4) <- c("N", "State Mean", "Mean", "State Var", "Var", "St
 resultsc.r2.c5 <- df.closed %>%
   group_by(d_nj) %>% # group by the state
   filter(x_st.wage.before > 4.25 & x_st.wage.before < 5 & d_nj == 1) %>% # filter for only new jersey and also wage = 4.26 - 4.99
-  dplyr::select(y_fte.after) %>% # select only necessary variables
+  dplyr::select(y_fte.after.closed) %>% # select only necessary variables
   group_by(N = n()) %>% # group by number of observations
   summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
-  mutate(n = N - y_fte.after_na_sum) %>% 
-  mutate(se = sqrt(y_fte.after_var/n))
+  mutate(n = N - y_fte.after.closed_na_sum) %>% 
+  mutate(se = sqrt(y_fte.after.closed_var/n))
 
 colnames(resultsc.r2.c5) <- c("N", "State Mean", "Mean", "State Var", "Var", "State na sum", "na sum", "N", "SE") # change column names
 
@@ -994,11 +994,11 @@ colnames(resultsc.r2.c5) <- c("N", "State Mean", "Mean", "State Var", "Var", "St
 resultsc.r2.c6 <- df.closed %>%
   group_by(d_nj) %>% # group by the state
   filter(x_st.wage.before > 4.99 & d_nj == 1) %>% # filter for only new jersey and also wage >= 5.00
-  dplyr::select(y_fte.after) %>% # select only necessary variables
+  dplyr::select(y_fte.after.closed) %>% # select only necessary variables
   group_by(N = n()) %>% # group by number of observations
   summarize_all(funs(mean, var, na_sum = sum(is.na(.))), na.rm = TRUE) %>% # aggregate/summarize data
-  mutate(n = N - y_fte.after_na_sum) %>% 
-  mutate(se = sqrt(y_fte.after_var/n))
+  mutate(n = N - y_fte.after.closed_na_sum) %>% 
+  mutate(se = sqrt(y_fte.after.closed_var/n))
 
 colnames(resultsc.r2.c6) <- c("N", "State Mean", "Mean", "State Var", "Var", "State na sum", "na sum", "N", "SE", "Label") # change column names
 
@@ -1059,7 +1059,7 @@ kable(results.low.r2, digits=2)
 
 ####################################################################################################
 
-# 3rd row: Change in Mean of FTE --> because there is an error before this does not work yet!
+# 3rd row: Change in Mean of FTE 
 
 results.low.r3 <- bind_rows(results.compare.r3, results.compare.r3[9,3]-results.compare.r3[7,3]) # mean difference between low and high
 results.low.r3[10,9] <- results.compare.r3[9,9]-results.compare.r3[7,9] # se difference between low and high
@@ -1150,6 +1150,7 @@ table3
 ####################################################################################################
   
 ## Model (ii)/Column 2: Controls Chain/Ownership
+  
   fit.c2 <- lm((y_fte.after-y_fte.before) ~ 
                d_nj + x_bk + x_kfc + x_roys + x_co.owned,  # linear model on differences of FTE with controls
              data = df2)
@@ -1165,7 +1166,6 @@ table3
 for(i in 1:nrow(df2)){
   df2$d_ini.wage.gap[i] <- 100 - ((df2$x_st.wage.before[i] * 100)/df2$x_st.wage.after[i])  
 }
-  
 df2$d_ini.wage.gap[df2$d_nj == 0] <- 0
 
 
@@ -1174,7 +1174,6 @@ df2$d_ini.wage.gap[df2$d_nj == 0] <- 0
 for(i in 1:nrow(df2)){
   df2$d_ini.wage.gap1[i] <- 100 - ((df2$x_st.wage.before[i] * 100)/5.05)
 }  
-  
 df2$d_ini.wage.gap1[df2$d_nj == 0] <- 0
 
 # Initial wage gap: Proportional increase in starting wage necessary to raise starting wage to new minimum wage (new minimum wage 5.05) (For PA the wage gap is 0) Scale 1-0
@@ -1182,7 +1181,7 @@ df2$d_ini.wage.gap1[df2$d_nj == 0] <- 0
 for(i in 1:nrow(df2)){
   df2$d_ini.wage.gap2[i] <- (5.05/df2$x_st.wage.before[i])
 }
-df2$d_ini.wage.gap1[df2$d_nj == 0] <- 0
+df2$d_ini.wage.gap2[df2$d_nj == 0] <- 0
 
 
 # then linear model/regression
@@ -1223,15 +1222,12 @@ df2$d_ini.wage.gap1[df2$d_nj == 0] <- 0
 
 # Sophie 
 
- 
-df2$fte.0 <- df2$y_fte.before
-df2$fte.1 <- df2$y_fte.after
+## Data into long format
 
-
- df2 <- dplyr::select(df2,
+ df3 <- dplyr::select(df2,
                          x_id,
-                         fte.0,
-                         fte.1,
+                         y_fte.before,
+                         y_fte.after,
                          d_nj,
                          x_bk,
                          x_kfc,
@@ -1240,13 +1236,18 @@ df2$fte.1 <- df2$y_fte.after
                          x_south.j,
                          x_central.j,
                          x_northeast.pa,
-                         x_easton.pa)
+                         x_easton.pa,
+                         x_store.name)
 
-data_long <- gather(df2, time, FTE, fte.0:fte.1, factor_key=TRUE)
+data_long <- gather(df3, time, FTE, y_fte.before:y_fte.after, factor_key=TRUE)
 
-data_long$time <- gsub("fte.0", 0, data_long$time)
-data_long$time <- gsub("fte.1", 1, data_long$time)
+data_long$time <- gsub("y_fte.before", 0, data_long$time)
+data_long$time <- gsub("y_fte.after", 1, data_long$time)
 data_long
+
+## Gen matching
+
+# 1. Perform genetic matching
 
 gen.matched <- GenMatch(X = cbind(data_long$x_bk, data_long$x_kfc, data_long$x_roys, data_long$x_wendys),
                         Tr = data_long$d_nj)
@@ -1255,10 +1256,13 @@ gen.results <- Match(X = cbind(data_long$x_bk, data_long$x_kfc, data_long$x_roys
                Tr = data_long$d_nj,
                Weight.matrix = gen.matched)
 
+# 2. Check balance
 
 MatchBalance(data_long$d_nj ~ data_long$x_bk + data_long$x_kfc + data_long$x_roys + data_long$x_wendys,
             match.out = gen.results,
             data = data_long)
+
+# 3. Estimate the treatment effect
 
 gen.results <- Match(X = cbind(data_long$x_bk, data_long$x_kfc, data_long$x_roys, data_long$x_wendys),
                Tr = data_long$d_nj,
@@ -1267,6 +1271,33 @@ gen.results <- Match(X = cbind(data_long$x_bk, data_long$x_kfc, data_long$x_roys
 
 summary(gen.results)
 
+## Exact matching
+
+# 1. Perform exact matching on selected variables
+
+matching.exact <- Match(X = cbind(data_long$x_bk, data_long$x_kfc, data_long$x_roys, data_long$x_wendys),
+               Tr = data_long$d_nj,
+               exact = TRUE,
+               estimand = "ATT")
+
+summary(matching.exact)
+
+# 2. Check balance
+
+MatchBalance(d_nj ~ x_bk + x_kfc + x_roys + x_wendys,
+            match.out = matching.exact,
+            data = data_long)
+
+# 3. Estimate the treatment effect
+
+matching.exact <- Match(X = cbind(data_long$x_bk, data_long$x_kfc, data_long$x_roys, data_long$x_wendys),
+               Tr = data_long$d_nj,
+               Y =  data_long$FTE,
+               exact = TRUE,
+               estimand = "ATT")
+
+summary(matching.exact) # same results
+summary(gen.results)
 ```
 
 
