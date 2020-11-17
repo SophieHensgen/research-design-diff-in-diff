@@ -411,6 +411,202 @@ count.w2 # final wave 2 df
 
 # Khizer 
 
+NJ_df <- df[df$d_state == 1,] # NJ
+total_NJ <- nrow(NJ_df) #count rows
+total_BK <- nrow (NJ_df[NJ_df$x_store.name ==1,]) #Burger King in NJ
+percent_NJ_BK <- total_BK/total_NJ *100 # calculate percentage
+
+total_NJ <- nrow(NJ_df) #count rows
+total_KFC <- nrow (NJ_df[NJ_df$x_store.name ==2,]) #KFC in NJ
+percent_NJ_KFC <- total_KFC/total_NJ *100 # calculate percentage
+
+total_NJ <- nrow(NJ_df) #count rows
+total_roys <- nrow (NJ_df[NJ_df$x_store.name ==3,]) #roys in NJ
+percent_NJ_roys <- total_roys/total_NJ *100 # calculate percentage
+
+total_NJ <- nrow(NJ_df) #count rows
+total_wendys <- nrow (NJ_df[NJ_df$x_store.name ==4,]) #wendys in NJ
+percent_NJ_wendys <- total_wendys/total_NJ *100 # calculate percentage
+
+PA_df <- df[df$d_state == 0,] # PA 
+total_PA <- nrow(PA_df) #count rows
+total_BK <- nrow (PA_df[PA_df$x_store.name ==1,]) # BK in PA
+percent_PA_BK <- total_BK/total_PA *100 # calculate percentage
+
+total_PA <- nrow(PA_df) #count rows
+total_KFC <- nrow (PA_df[PA_df$x_store.name ==2,]) #KFC in PA
+percent_PA_KFC <- total_KFC/total_PA *100 # calculate percentage
+
+total_PA <- nrow(PA_df) #count rows
+total_roys <- nrow (PA_df[PA_df$x_store.name ==3,]) #roys in PA
+percent_PA_roys <- total_roys/total_PA *100 # calculate percentage
+
+total_PA <- nrow(PA_df) #count rows
+total_wendys <- nrow (PA_df[PA_df$x_store.name ==4,]) #wendys in PA
+percent_PA_wendys <- total_wendys/total_PA *100 # calculate percentage
+
+###################################################################################################
+
+# 2nd chunk
+
+NJ_df
+
+# Calculate FTE
+
+NJ_df$y_fte.before <- NJ_df$y_full.emp + NJ_df$y_managers + NJ_df$y_part.emp*0.5
+
+
+NJ_df$y_fte.after <- NJ_df$y_part.emp.sec*0.5 + NJ_df$y_full.emp.sec + NJ_df$y_managers.sec 
+
+
+PA_df$y_fte.before <- PA_df$y_full.emp + PA_df$y_managers + PA_df$y_part.emp*0.5
+
+
+PA_df$y_fte.after <- PA_df$y_part.emp.sec*0.5 + PA_df$y_full.emp.sec + PA_df$y_managers.sec 
+
+
+# FTE before
+for(i in 1:nrow(df)){
+  df$y_fte.before[i] <- df$y_full.emp[i] + # Full-time employees
+    0.5*(df$y_part.emp[i]) + # plus part-time employees counted as 0.5
+    df$y_managers[i] # plus number of managers
+}
+
+
+# FTE after
+for(i in 1:nrow(df)){
+  df$y_fte.after[i] <- df$y_full.emp.sec[i] +
+    0.5*(df$y_part.emp.sec[i]) +
+    df$y_managers.sec[i]
+}
+
+###################################################################################################
+
+# 1st wave 
+NJ.before <- mean(NJ_df$y_fte.before , na.rm=TRUE) # FTE 1st wave NJ
+PA.before <- mean(PA_df$y_fte.before , na.rm=TRUE) # FTE 1st wave PA
+NJ.before_wage <- mean(NJ_df$x_st.wage.before , na.rm=TRUE) # Starting wage 1st wave NJ
+PA.before_wage <- mean(PA_df$x_st.wage.before , na.rm=TRUE) # Starting wage 1st wave PA
+NJ.before_openday <- mean(NJ_df$x_open.per.day , na.rm=TRUE) # Open hours 1st wave NJ
+PA.before_openday <- mean(PA_df$x_open.per.day , na.rm=TRUE) # Open hours 1st wave PA
+NJ.before_bonus <- mean(NJ_df$x_cash.bounty , na.rm=TRUE)*100 # Recruiting bonus 1st wave NJ
+PA.before_bonus <- mean(PA_df$x_cash.bounty , na.rm=TRUE)*100 # Recruiting bonus 1st wave PA
+NJ.before_Pfull <- mean(NJ_df$x_medium.soda +NJ_df$x_small.fries +NJ_df$x_entree, na.rm=TRUE) # Price of full meal 1st wave NJ
+PA.before_Pfull <- mean(PA_df$x_medium.soda +PA_df$x_small.fries +PA_df$x_entree, na.rm=TRUE) # Price of full meal 1st wave PA
+
+###################################################################################################
+
+# Percentage full-time employees in NJ 1st wave
+NJ_df <- df[df$d_state == 1,] # NJ
+NJ_df_before<- NJ_df$y_full.emp
+part_time_len <- length(NJ_df$y_part.emp) # length of variable
+managers_len <- length(NJ_df$y_managers) # length of variable
+ompleterecords <- na.omit(NJ_df_before) # delete omits
+NJ_df_per.1 = length(ompleterecords)/(length(NJ_df_before)+part_time_len+managers_len) 
+NJ_df_per.1 = NJ_df_per.1*100
+mean(NJ_df_per.1)
+
+# Percentage full-time employees in PA 1st wave
+PA_df <- df[df$d_state == 0,] # PA
+PA_df_before<- PA_df$y_full.emp
+part_time_len <- length(PA_df$y_part.emp) # length of variable
+managers_len <- length(PA_df$y_managers) # length of variable
+ompleterecords <- na.omit(PA_df_before) # delete omits
+PA_df_per.1 = length(ompleterecords)/(length(PA_df_before)+part_time_len+managers_len) 
+PA_df_per.1 = PA_df_per.1*100
+mean(PA_df_per.1)
+
+# Wage = $4.25 (percentage) in NJ 1st wave
+NJ_df <- df[df$d_state == 1,] # NJ
+NJ_df2 <- NJ_df$x_st.wage.before  #total
+ompleterecords <- na.omit(NJ_df2) # delete omits
+NJ_df_wage.45 <- ompleterecords[ompleterecords == 4.25]
+percent_wage_45 <- (length(NJ_df_wage.45)/length(NJ_df2)) *100 # percentage
+
+mean(NJ_df_wage.45)
+
+# Wage = $4.25 (percentage) in PA 1st wave
+PA_df <- df[df$d_state == 0,] # NJ 
+PA_df2 <- PA_df$x_st.wage.before  #total
+ompleterecords <- na.omit(PA_df2) # delete omits
+PA_df_wage.45 <- ompleterecords[ompleterecords == 4.25]
+percent_wage_45 <- (length(PA_df_wage.45)/length(PA_df2)) *100 # percentage
+
+mean(PA_df_wage.45)
+
+###################################################################################################
+
+# 2nd wave
+
+NJ.after <- mean(NJ_df$y_fte.after, na.rm=TRUE)# FTE 2nd wave NJ 
+PA.after <- mean(PA_df$y_fte.after, na.rm=TRUE)# FTE 2nd wave PA 
+NJ.after_wage <- mean(NJ_df$x_st.wage.after, na.rm=TRUE) # Starting wage 2nd wave NJ
+PA.after <- mean(PA_df$x_st.wage.after, na.rm=TRUE)# Starting wage 2nd wave PA 
+NJ.after_openday <- mean(NJ_df$x_open.per.day.sec, na.rm=TRUE) # Open hours 2nd wave NJ
+PA.after_openday <- mean(PA_df$x_open.per.day.sec, na.rm=TRUE) # Open hours 2nd wave PA
+NJ.after_bonus <- mean(NJ_df$x_special.program.sec, na.rm=TRUE)*100 # Recruiting bonus 2nd wave NJ
+PA.after_bonus <- mean(PA_df$x_special.program.sec, na.rm=TRUE)*100 # Recruiting bonus 2nd wave PA
+NJ.after_pfull <- mean(NJ_df$x_medium.soda.sec +NJ_df$x_small.fries.sec +NJ_df$x_entree.sec, na.rm=TRUE) # Price of full meal 2nd wave NJ
+PA.after_pfull <- mean(PA_df$x_medium.soda.sec +PA_df$x_small.fries.sec +PA_df$x_entree.sec, na.rm=TRUE) # Price of full meal 2nd wave PA
+
+###################################################################################################
+
+# Percentage full-time employees in NJ 2nd wave
+NJ_df <- df[df$d_state == 1,] # NJ
+NJ_df_after<- NJ_df$y_full.emp.sec 
+part_time_len <- length(NJ_df$y_part.emp.sec) # length of variable
+managers_len <- length(NJ_df$y_managers.sec) # length of variable
+ompleterecords <- na.omit(NJ_df_after) # delete omits
+NJ_df_per.2 = length(ompleterecords)/(length(NJ_df_after)+part_time_len+managers_len) 
+NJ_df_per.2 = NJ_df_per.2*100
+mean(NJ_df_per.2)
+
+# Percentage full-time employees in PA 2nd wave
+PA_df <- df[df$d_state == 0,] # PA
+PA_df_after<- PA_df$y_full.emp.sec 
+part_time_len <- length(PA_df$y_part.emp.sec) # length of variable
+managers_len <- length(PA_df$y_managers.sec) # length of variable
+ompleterecords <- na.omit(PA_df_after) # delete omits
+PA_df_per.2 = length(ompleterecords)/(length(PA_df_after)+part_time_len+managers_len) 
+PA_df_per.2 = PA_df_per.2*100
+mean(PA_df_per.2)
+
+# Wage = $4.25 (percentage) in NJ 2nd wave
+NJ_df <- df[df$d_state == 1,] # NJ
+NJ_df2 <- NJ_df$x_st.wage.after  #total
+ompleterecords <- na.omit(NJ_df2) # delete omits
+NJ_df_wage.45 <- ompleterecords[ompleterecords == 4.25]
+percent_wage_45 <- (length(NJ_df_wage.45)/length(NJ_df2)) *100 # percentage
+
+mean(NJ_df_wage.45)
+
+# Wage = $4.25 (percentage) in PA 2nd wave
+PA_df <- df[df$d_state == 0,] # PA 
+PA_df2 <- PA_df$x_st.wage.after  #total
+ompleterecords <- na.omit(PA_df2) # delete omits
+PA_df_wage.45 <- ompleterecords[ompleterecords == 4.25]
+percent_wage_45 <- (length(PA_df_wage.45)/length(PA_df2)) *100 # percentage
+
+mean(PA_df_wage.45)
+
+# Wage = $5.05 (percentage) in NJ 2nd wave
+NJ_df <- df[df$d_state == 1,] # NJ
+NJ_df2 <- NJ_df$x_st.wage.after  #total
+ompleterecords <- na.omit(NJ_df2) # delete omits
+NJ_df_wage.50 <- ompleterecords[ompleterecords == 5.05]
+percent_wage.50 <- (length(NJ_df_wage.50)/length(NJ_df2)) *100 # percentage
+
+mean(NJ_df_wage.50)
+
+# Wage = $5.05 (percentage) in PA 2nd wave
+PA_df <- df[df$d_state == 0,] # PA 
+PA_df2 <- PA_df$x_st.wage.after  #total
+ompleterecords <- na.omit(PA_df2) # delete omits
+PA_df_wage.50 <- ompleterecords[ompleterecords == 5.05]
+percent_wage.50 <- (length(PA_df_wage.50)/length(PA_df2)) *100 # percentage
+
+mean(PA_df_wage.50)
+
 
 ```
 
